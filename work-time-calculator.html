@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>업무용 시간 계산기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #f5f7fa;
+    color: #2c3e50;
+    padding: 20px 16px;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .subtitle {
+    text-align: center;
+    color: #7a8599;
+    font-size: 0.875rem;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 16px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 70px 1fr 1fr 90px;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eef1f6;
+  }
+  .row:last-of-type { border-bottom: none; }
+  .header-row {
+    font-size: 0.8rem;
+    color: #7a8599;
+    font-weight: 500;
+    padding-bottom: 8px;
+  }
+  .day-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  input[type="time"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #dde3ec;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: #fafbfc;
+  }
+  input[type="time"]:focus {
+    outline: none;
+    border-color: #4a90e2;
+    background: #fff;
+  }
+  .hours {
+    text-align: right;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #2c3e50;
+    white-space: nowrap;
+  }
+  .hours.empty { color: #c0c7d1; font-weight: 400; }
+  .summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+  }
+  .summary-label {
+    font-size: 0.95rem;
+    color: #556272;
+  }
+  .total {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .over { color: #e74c3c; }
+  .normal { color: #27ae60; }
+  .note {
+    font-size: 0.8rem;
+    color: #9aa3b2;
+    text-align: center;
+    margin-top: 12px;
+  }
+  .reset-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    background: #fff;
+    border: 1px solid #dde3ec;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #556272;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .reset-btn:hover { background: #f5f7fa; }
+
+  @media (max-width: 480px) {
+    .row {
+      grid-template-columns: 48px 1fr 1fr 72px;
+      gap: 6px;
+    }
+    input[type="time"] {
+      padding: 7px 6px;
+      font-size: 0.85rem;
+    }
+    .day-label { font-size: 0.9rem; }
+    .hours { font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>업무용 시간 계산기</h1>
+    <p class="subtitle">점심시간 1시간 자동 차감</p>
+
+    <div class="card">
+      <div class="row header-row">
+        <div>요일</div>
+        <div>출근</div>
+        <div>퇴근</div>
+        <div style="text-align:right">근무시간</div>
+      </div>
+      <div id="days"></div>
+      <button class="reset-btn" id="resetBtn">초기화</button>
+    </div>
+
+    <div class="card">
+      <div class="summary">
+        <span class="summary-label">주간 누적 근무시간</span>
+        <span class="total normal" id="weeklyTotal">0h 0m</span>
+      </div>
+      <p class="note" id="noteText">주 40시간 기준</p>
+    </div>
+  </div>
+
+<script>
+  const days = ['월', '화', '수', '목', '금'];
+  const LUNCH_MIN = 60;
+  const WEEKLY_LIMIT_MIN = 40 * 60;
+  const STORAGE_KEY = 'work-time-calc-v1';
+
+  const daysContainer = document.getElementById('days');
+  const weeklyTotalEl = document.getElementById('weeklyTotal');
+  const noteEl = document.getElementById('noteText');
+
+  const state = loadState();
+
+  days.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <div class="day-label">${d}</div>
+      <input type="time" data-day="${i}" data-field="start" value="${state[i].start}">
+      <input type="time" data-day="${i}" data-field="end" value="${state[i].end}">
+      <div class="hours empty" id="h-${i}">-</div>
+    `;
+    daysContainer.appendChild(row);
+  });
+
+  daysContainer.addEventListener('input', (e) => {
+    const el = e.target;
+    if (el.tagName !== 'INPUT') return;
+    const i = +el.dataset.day;
+    state[i][el.dataset.field] = el.value;
+    saveState();
+    recalc();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    for (let i = 0; i < days.length; i++) {
+      state[i] = { start: '', end: '' };
+    }
+    document.querySelectorAll('input[type="time"]').forEach(el => el.value = '');
+    saveState();
+    recalc();
+  });
+
+  function toMinutes(t) {
+    if (!t) return null;
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function computeDayMinutes(day) {
+    const s = toMinutes(day.start);
+    const e = toMinutes(day.end);
+    if (s == null || e == null) return null;
+    let diff = e - s;
+    if (diff <= 0) return 0;
+    diff = Math.max(0, diff - LUNCH_MIN);
+    return diff;
+  }
+
+  function formatHM(mins) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}h ${m}m`;
+  }
+
+  function recalc() {
+    let total = 0;
+    for (let i = 0; i < days.length; i++) {
+      const mins = computeDayMinutes(state[i]);
+      const el = document.getElementById(`h-${i}`);
+      if (mins == null) {
+        el.textContent = '-';
+        el.classList.add('empty');
+      } else {
+        el.textContent = formatHM(mins);
+        el.classList.remove('empty');
+        total += mins;
+      }
+    }
+    weeklyTotalEl.textContent = formatHM(total);
+    if (total > WEEKLY_LIMIT_MIN) {
+      weeklyTotalEl.classList.add('over');
+      weeklyTotalEl.classList.remove('normal');
+      noteEl.textContent = `주 40시간 초과: +${formatHM(total - WEEKLY_LIMIT_MIN)}`;
+    } else {
+      weeklyTotalEl.classList.remove('over');
+      weeklyTotalEl.classList.add('normal');
+      const remain = WEEKLY_LIMIT_MIN - total;
+      noteEl.textContent = total === 0
+        ? '주 40시간 기준'
+        : `40시간까지 ${formatHM(remain)} 남음`;
+    }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === 5) return parsed;
+      }
+    } catch {}
+    return days.map(() => ({ start: '', end: '' }));
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+  }
+
+  recalc();
+</script>
+</body>
+</html>
