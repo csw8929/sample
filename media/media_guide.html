@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OAF 미디어 스택 가이드 · brs_143</title>
+<link rel="stylesheet" href="./lib/github-dark.min.css">
+<style>
+:root{
+  --bg:#0e1117; --bg2:#161b22; --bg3:#1c232c; --panel:#11161d;
+  --fg:#e6edf3; --fg2:#9da7b3; --fg3:#6e7781;
+  --line:#272e38; --accent:#58a6ff; --accent2:#bc8cff;
+  --renderer:#3b82f6; --media:#a855f7; --browser:#22c55e; --wayland:#f59e0b; --cdm:#ef4444;
+  --radius:14px; --mono:'SF Mono',ui-monospace,'JetBrains Mono','Cascadia Code',Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+body.light{
+  --bg:#f6f8fa; --bg2:#fff; --bg3:#eef1f5; --panel:#fff;
+  --fg:#1f2328; --fg2:#57606a; --fg3:#8c959f; --line:#d8dee4;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.7;font-size:15.5px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg3);padding:.12em .42em;border-radius:6px;color:var(--accent)}
+pre code{background:none;padding:0;color:inherit}
+
+/* layout */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:16px;
+  padding:12px 22px;background:rgba(14,17,23,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+body.light .topbar{background:rgba(255,255,255,.82)}
+.topbar h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.2px}
+.topbar .tag{font-size:11px;color:var(--fg3);border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+.spacer{flex:1}
+.tbtn{cursor:pointer;border:1px solid var(--line);background:var(--bg2);color:var(--fg2);
+  border-radius:8px;padding:6px 12px;font-size:12.5px;font-family:var(--sans)}
+.tbtn:hover{color:var(--fg);border-color:var(--accent)}
+#search{background:var(--bg2);border:1px solid var(--line);border-radius:8px;color:var(--fg);
+  padding:7px 12px;font-size:13px;width:200px;font-family:var(--sans)}
+.wrap{display:grid;grid-template-columns:268px 1fr;gap:0;max-width:1500px;margin:0 auto}
+nav.side{position:sticky;top:57px;align-self:start;height:calc(100vh - 57px);overflow-y:auto;
+  padding:20px 12px 60px;border-right:1px solid var(--line)}
+nav.side .grp{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--fg3);
+  margin:18px 12px 6px;font-weight:700}
+nav.side a{display:block;color:var(--fg2);padding:7px 12px 7px 14px;border-radius:8px;font-size:13.5px;
+  border-left:2px solid transparent;margin:1px 0}
+nav.side a:hover{background:var(--bg2);color:var(--fg);text-decoration:none}
+nav.side a.active{background:var(--bg2);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+nav.side a .n{color:var(--fg3);font-variant-numeric:tabular-nums;margin-right:8px;font-size:12px}
+main{padding:34px 50px 140px;min-width:0;max-width:1040px}
+section{scroll-margin-top:70px;margin-bottom:60px}
+section.hidden{display:none}
+
+/* headings */
+h2.sec{font-size:30px;margin:0 0 4px;font-weight:800;letter-spacing:-.4px}
+.sec-sub{color:var(--fg2);font-size:15px;margin:0 0 26px;border-bottom:1px solid var(--line);padding-bottom:20px}
+h3{font-size:20px;margin:38px 0 12px;font-weight:700;display:flex;align-items:center;gap:9px}
+h3::before{content:"";width:4px;height:19px;background:linear-gradient(var(--accent),var(--accent2));border-radius:3px}
+h4{font-size:15px;margin:22px 0 8px;color:var(--fg);font-weight:700}
+p{margin:11px 0}
+
+/* hero analogy card */
+.hero{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--line);
+  border-radius:var(--radius);padding:20px 22px;margin:18px 0 8px;position:relative;overflow:hidden}
+.hero::before{content:"💡";position:absolute;right:18px;top:14px;font-size:34px;opacity:.18}
+.hero .lbl{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--accent2);font-weight:700}
+.hero p{margin:6px 0 0;font-size:16px}
+
+/* callouts */
+.note{border-radius:12px;padding:13px 16px 13px 44px;margin:16px 0;position:relative;border:1px solid var(--line);background:var(--bg2);font-size:14.2px}
+.note::before{position:absolute;left:14px;top:12px;font-size:17px}
+.note.info::before{content:"ℹ️"} .note.warn::before{content:"⚠️"} .note.tip::before{content:"✅"} .note.bug::before{content:"🐞"}
+.note.warn{border-color:#7a5b00;background:rgba(245,158,11,.08)}
+.note.bug{border-color:#7a2222;background:rgba(239,68,68,.08)}
+.note.tip{border-color:#1c5b2e;background:rgba(34,197,94,.08)}
+.note b{color:var(--fg)}
+
+/* process badges */
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;color:#fff;vertical-align:middle}
+.b-r{background:var(--renderer)} .b-m{background:var(--media)} .b-b{background:var(--browser)}
+.b-w{background:var(--wayland)} .b-c{background:var(--cdm)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.legend span{font-size:12.5px;color:var(--fg2);display:flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+/* diagrams */
+.diagram{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;margin:18px 0;overflow-x:auto;text-align:center}
+.diagram .cap{text-align:left;font-size:12.5px;color:var(--fg3);margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.mermaid{display:flex;justify-content:center}
+
+/* tables */
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:13.6px;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--bg3);font-weight:700;white-space:nowrap}
+tbody tr:nth-child(even){background:var(--bg2)}
+
+/* code refs (collapsible) */
+details.code{border:1px solid var(--line);border-radius:12px;margin:14px 0;background:var(--bg2);overflow:hidden}
+details.code>summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14px;list-style:none;display:flex;align-items:center;gap:10px}
+details.code>summary::-webkit-details-marker{display:none}
+details.code>summary::before{content:"▸";color:var(--accent);transition:.2s}
+details.code[open]>summary::before{transform:rotate(90deg)}
+details.code>summary .cnt{margin-left:auto;font-size:11px;color:var(--fg3);font-weight:500}
+details.code .body{padding:0 16px 14px;border-top:1px solid var(--line)}
+.ref{font-family:var(--mono);font-size:12.6px;padding:8px 0;border-bottom:1px solid var(--line)}
+.ref:last-child{border-bottom:none}
+.ref .path{color:var(--accent)}
+.ref .sym{color:var(--accent2)}
+.ref .d{display:block;font-family:var(--sans);font-size:13px;color:var(--fg2);margin-top:3px}
+pre{background:var(--bg)!important;border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;margin:14px 0;font-size:13px;line-height:1.55}
+
+/* step flow inline */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:14px 0;font-size:13px}
+.flow .step{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-family:var(--mono);font-size:12px}
+.flow .arr{color:var(--fg3)}
+hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+.kpi{display:flex;gap:14px;flex-wrap:wrap;margin:16px 0}
+.kpi .card{flex:1;min-width:150px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi .num{font-size:26px;font-weight:800;color:var(--accent)}
+.kpi .lab{font-size:12.5px;color:var(--fg2);margin-top:2px}
+footer{color:var(--fg3);font-size:12.5px;border-top:1px solid var(--line);padding-top:18px;margin-top:50px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🎬 OAF 미디어 스택 가이드</h1>
+  <span class="tag">brs_143 · Chromium 143 · MOBIS CCNC</span>
+  <span class="spacer"></span>
+  <input id="search" placeholder="목차 검색…" oninput="filterNav(this.value)">
+  <button class="tbtn" onclick="toggleTheme()">🌓 테마</button>
+</div>
+<div class="wrap">
+<nav class="side" id="side">
+  <div class="grp">시작</div>
+  <a href="#overview" data-s="overview"><span class="n">00</span>전체 지도</a>
+  <div class="grp">4대 파이프라인</div>
+  <a href="#video" data-s="video"><span class="n">01</span>비디오 · Video Hole</a>
+  <a href="#audio" data-s="audio"><span class="n">02</span>오디오 · 9-hop · Focus</a>
+  <a href="#webaudio" data-s="webaudio"><span class="n">03</span>WebAudio</a>
+  <a href="#cdm" data-s="cdm"><span class="n">04</span>CDM · DRM (Widevine)</a>
+  <div class="grp">차량 연동</div>
+  <a href="#picknow" data-s="picknow"><span class="n">05</span>익스텐션 · PickNow</a>
+  <div class="grp">심화 (Deep Dive)</div>
+  <a href="#lifecycle" data-s="lifecycle"><span class="n">10</span>생성→GStreamer→재생 라이프사이클</a>
+  <a href="#geometry" data-s="geometry"><span class="n">11</span>비디오 크기·서피스·Wayland 연결</a>
+  <a href="#cdm-deep" data-s="cdm-deep"><span class="n">12</span>CDM 복호화 심화 (감지→key→decrypt)</a>
+  <a href="#vcontrol" data-s="vcontrol"><span class="n">13</span>비디오 컨트롤 (still·play·pause·seek·teardown)</a>
+  <a href="#audiopath" data-s="audiopath"><span class="n">14</span>오디오 경로 (element→HAL / WebAudio→ALSA)</a>
+  <a href="#procmap" data-s="procmap"><span class="n">15</span>프로세스 지도 · Audio/Media Service</a>
+  <div class="grp">부록</div>
+  <a href="#refs" data-s="refs"><span class="n">06</span>참고 자료 · 외부 그림</a>
+</nav>
+<main>
+
+<!-- ================= 00 OVERVIEW ================= -->
+<section id="overview">
+  <h2 class="sec">00 · 전체 지도</h2>
+  <p class="sec-sub">데스크톱 Chrome과 무엇이 다른가, 그리고 미디어 한 번 재생이 어떤 프로세스들을 가로지르는가.</p>
+
+  <div class="hero">
+    <div class="lbl">한 문장 요약</div>
+    <p>이 브라우저는 <b>그림은 GStreamer가 Wayland 화면에 직접 그리고</b>, <b>소리는 차량 오디오 포커스가 중재하며</b>, <b>곡 정보는 PickNow로 헤드유닛에 올린다.</b> Chromium은 "엔진+껍데기"만 제공하고, 실제 미디어는 차량 HW로 빠져나간다.</p>
+  </div>
+
+  <h3>데스크톱 Chrome과의 결정적 차이 4가지</h3>
+  <p>이 4가지만 잡으면 나머지 모든 코드가 "왜 이렇게 생겼는지" 풀립니다.</p>
+  <table>
+    <thead><tr><th>주제</th><th>데스크톱 Chrome</th><th>이 차량 브라우저 (brs_143)</th><th>왜?</th></tr></thead>
+    <tbody>
+      <tr><td><b>디코딩</b></td><td>Chromium 내부 디코더(ffmpeg)</td><td><b>GStreamer</b> 외부 파이프라인이 전담</td><td>NVIDIA HW 디코더 · 차량 오디오 HAL</td></tr>
+      <tr><td><b>비디오 표시</b></td><td>GPU 합성기가 프레임을 그림</td><td><b>Video Hole</b> — Wayland IVI 서피스에 직접 그리고 브라우저는 "구멍"만 뚫음</td><td>HW 오버레이 성능 · 합성 우회</td></tr>
+      <tr><td><b>오디오 믹싱</b></td><td>OS가 알아서 섞음</td><td><b>Audio Focus + stream-id</b>로 누가 스피커를 쓸지 직접 중재</td><td>내비·라디오·웹앱 충돌 방지</td></tr>
+      <tr><td><b>미디어 세션</b></td><td>브라우저 UI에만 표시</td><td><b>PickNow</b>로 곡정보·재생상태·썸네일을 헤드유닛에 전송</td><td>클러스터/센터 디스플레이 연동</td></tr>
+    </tbody>
+  </table>
+
+  <h3>미디어가 가로지르는 3개 프로세스</h3>
+  <div class="legend">
+    <span><i style="background:var(--renderer)"></i>Renderer 프로세스</span>
+    <span><i style="background:var(--media)"></i>Media Service 프로세스</span>
+    <span><i style="background:var(--browser)"></i>Browser 프로세스</span>
+    <span><i style="background:var(--wayland)"></i>Wayland 컴포지터 / CDM 프로세스</span>
+  </div>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  subgraph R["🟦 Renderer 프로세스"]
+    JS["JS #lt;video#gt; / #lt;audio#gt; / AudioContext"] --> HME["HTMLMediaElement"]
+    HME --> WMP["WebMediaPlayerImpl"]
+    WMP --> PIPE["Pipeline / MojoRenderer"]
+    EXT["Obigo Extension<br/>(웹앱 기능층)"]
+  end
+  subgraph M["🟪 Media Service 프로세스"]
+    RIMPL["RendererImpl"] --> GST["GStreamerRendererImpl<br/>(디코딩·sink)"]
+    GST --> HV["hvideosink"]
+    GST --> HA["haudiosink"]
+  end
+  subgraph B["🟩 Browser / 🟧 외부"]
+    HMI["VideoManager · AudioFocus · PickNow"]
+    WL["Wayland 컴포지터 (IVI)"]
+    SPK["차량 스피커 / HW 디코더"]
+  end
+  PIPE == "mojo IPC (프로세스 경계)" ==> RIMPL
+  HV --> WL
+  HA --> SPK
+  EXT --> HMI
+  HMI --> WL
+    </pre>
+    <div class="cap">기억할 통로 하나: <b>MojoRenderer ↔ RendererImpl</b> 사이의 mojo IPC가 프로세스 경계입니다. 그 위는 Renderer, 그 아래는 Media Service.</div>
+  </div>
+
+  <h3>"이 가이드 읽는 법"</h3>
+  <p>각 섹션은 <b>① 쉬운 비유 → ② 다이어그램(흐름·시퀀스) → ③ 코드 레퍼런스(접기) → ④ 매크로·디버깅</b> 순서입니다. 코드 레퍼런스의 줄번호는 <em>현재 트리 기준 앵커</em>이며 코드가 바뀌면 어긋날 수 있으니, 정확히는 <b>심볼 이름으로 검색</b>하세요.</p>
+
+  <h3>미디어 패치가 사는 곳 (파일 분포)</h3>
+  <p>Video Hole 마이그레이션 분석 당시 집계한, <code>OBIGO_USE_VIDEO_HOLE</code> 가드가 퍼져 있던 Chromium 트리 분포입니다. 미디어 코드가 어디에 있는지 감을 줍니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+pie showData
+  title 미디어/비디오홀 패치 파일 분포 (≈120 파일)
+  "media/" : 29
+  "obigo/ (extension)" : 18
+  "content/" : 15
+  "blink/" : 14
+  "cc/" : 9
+  "viz/" : 5
+    </pre>
+  </div>
+</section>
+
+<!-- ================= 01 VIDEO ================= -->
+<section id="video">
+  <h2 class="sec">01 · 비디오 &amp; Video Hole</h2>
+  <p class="sec-sub">&lt;video&gt;가 화면에 뜨기까지. 제어 신호는 GStreamer까지 내려가고, 그림은 Wayland 서피스에 직접 그려진다.</p>
+
+  <div class="hero">
+    <div class="lbl">비유</div>
+    <p>브라우저는 벽에 <b>투명한 액자(구멍)</b>만 걸어둡니다. 실제 영상 그림은 그 구멍 뒤에서 <b>GStreamer가 차량 화면(Wayland)에 직접</b> 칠합니다. 그래서 브라우저는 "여기에 비디오가 있다"는 위치만 알려주면 됩니다.</p>
+  </div>
+
+  <h3>제어 신호 경로 (play → GStreamer)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  A["HTMLMediaElement::PlayInternal()<br/>→ UpdatePlayState()"]:::r --> B["WebMediaPlayerImpl::Play()<br/>SetPlaybackRate()"]:::r
+  B --> C{"RendererImplFactory<br/>::CreateRenderer()"}:::r
+  C -->|"OBIGO_USE_GSTREAMER_RENDER"| D["GStreamerRendererImpl 주입"]:::m
+  D --> E["InitializeGStreamer()<br/>appsrc → decodebin → sink"]:::m
+  E --> F["NewVideoAdded()<br/>해상도 추출 · sink 연결"]:::m
+  F --> G["GStreamerVideoHole<br/>::SetVideoSurfaceId()"]:::m
+  G --> H["g_object_set(sink, 'ivisurface-id', id)"]:::w
+  H --> I["Wayland 컴포지터가<br/>서피스에 영상 합성"]:::w
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef w fill:#5f3f1e,stroke:#f59e0b,color:#fff;
+    </pre>
+    <div class="cap"><span class="badge b-r">Renderer</span> 신호 시작 · <span class="badge b-m">Media Service</span> GStreamer · <span class="badge b-w">Wayland</span> 실제 합성</div>
+  </div>
+
+  <h3>첫 프레임이 뜨는 순간 (시퀀스)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant JS as JS (웹앱)
+  participant BL as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant GST as GStreamerRendererImpl
+  participant VM as VideoManager (extension)
+  participant WL as Wayland IVI
+  JS->>BL: video.play()
+  BL->>WMP: UpdatePlayState() → Play()
+  WMP->>GST: SetPlaybackRate / Initialize
+  GST->>GST: decodebin이 video pad 생성
+  GST->>GST: NewVideoAdded() · 해상도 추출
+  VM->>VM: createVideoWindow() · generateSurfaceId()
+  VM->>WMP: setVideoSurfaceID(id) ★누락 단골 버그
+  WMP->>GST: SetVideoSurfaceId(id)
+  GST->>WL: g_object_set(sink,'ivisurface-id',id)
+  GST->>GST: BUFFERING_HAVE_ENOUGH (preroll 완료)
+  GST->>WL: 첫 프레임 합성 → 화면 표시
+    </pre>
+  </div>
+
+  <h3>Video Hole이란?</h3>
+  <p>일반 Chrome은 디코드한 비디오 프레임을 GPU 합성기가 다른 UI와 함께 그립니다. 여기서는 다릅니다:</p>
+  <ul>
+    <li>CC 레이어(<code>VideoLayerImpl</code>)는 비디오 자리에 <b>투명한 구멍</b>만 그립니다 (<code>SkBlendMode::kSrc</code>로 펀칭).</li>
+    <li>GStreamer의 <code>hvideosink</code>가 그 자리에 대응하는 <b>Wayland IVI 서피스</b>에 디코드된 프레임을 직접 올립니다.</li>
+    <li>컴포지터가 "브라우저 UI(구멍 뚫린) + 비디오 서피스"를 겹쳐 최종 화면을 만듭니다.</li>
+  </ul>
+  <div class="note info"><b>매 프레임 위치 전달:</b> 구멍과 영상이 어긋나지 않도록, 비디오 영역의 좌표/크기를 <code>setVideoRect</code> / <code>applyRawVideoRect</code> 경로로 헤드유닛에 계속 알려줍니다.</div>
+
+  <h3>서피스 ID 발급과 그 유명한 버그</h3>
+  <div class="flow">
+    <span class="step">createVideoWindow()</span><span class="arr">→</span>
+    <span class="step">generateSurfaceId()</span><span class="arr">→</span>
+    <span class="step">setVideoSurfaceID()</span><span class="arr">→</span>
+    <span class="step">video_surface_list_[id]</span><span class="arr">→</span>
+    <span class="step">GetVideoWindow()</span>
+  </div>
+  <div class="note bug"><b>회귀 1순위 패턴:</b> mtx(MOTREX) 경로엔 있고 ccnc(MOBIS) 경로엔 <code>setVideoSurfaceID()</code> 호출 한 줄이 빠져서, <code>GetVideoWindow()</code>가 0을 반환 → IVI subsurface 미생성 → <b>영상이 안 보임</b>. <code>OBIGO_USE_VIDEO_HOLE &amp;&amp; USE_WAYLAND_IVI_SHELL</code> 게이트라 컴파일 에러가 안 나서 런타임에야 드러남. <b>MOBIS 미디어 회귀 진단 1번 = mtx 경로와 1:1 대조.</b></div>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — 비디오 경로 <span class="cnt">10개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">blink/.../html/media/html_media_element.cc</span> · <span class="sym">PlayInternal() ~L3247, UpdatePlayState() ~L4357</span><span class="d">JS play() 수신, 재생/일시정지 상태머신. pause_reason 전파가 stop 처리의 핵심.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/media/web_media_player_impl.cc</span> · <span class="sym">Play() ~L1070</span><span class="d">pipeline_controller_-&gt;SetPlaybackRate() 호출로 파이프라인을 재생 상태로.</span></div>
+      <div class="ref"><span class="path">media/renderers/renderer_impl_factory.cc</span> · <span class="sym">CreateRenderer() ~L154</span><span class="d">OBIGO_USE_GSTREAMER_RENDER 분기. GStreamerRendererImpl을 native renderer로 주입.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/gstreamer_renderer_impl.cc</span> · <span class="sym">InitializeGStreamer() ~L293, NewVideoAdded() ~L873, OnMessageHandler() ~L1171</span><span class="d">GStreamer 파이프라인 구성 · bus watch · video pad 처리.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/feature/gstreamer_video_hole.cc</span> · <span class="sym">SetVideoSurfaceId() ~L27, SetVideoRect() ~L62</span><span class="d">g_object_set(sink,"ivisurface-id",id). 플랫폼별 속성명(surface-id/ivisurface-id) 분기.</span></div>
+      <div class="ref"><span class="path">obigo/extension/media/ccnc/video_manager.cc</span> · <span class="sym">createVideoWindow()</span><span class="d">generateSurfaceId() → setVideoSurfaceID(). ← 누락 시 영상 미표시.</span></div>
+      <div class="ref"><span class="path">cc/layers/video_layer_impl.cc</span><span class="d">CC 레이어에서 비디오 자리에 투명 구멍 펀칭(또는 VideoHoleDrawQuad emit).</span></div>
+    </div>
+  </details>
+
+  <h4>핵심 매크로</h4>
+  <p><code>OBIGO_USE_GSTREAMER_RENDER</code> · <code>OBIGO_USE_NATIVE_RENDER</code> · <code>OBIGO_USE_VIDEO_HOLE</code> · <code>USE_WAYLAND_IVI_SHELL</code> · <code>MOBIS_NVIDIA</code> · <code>ARCH_CPU_ARM_FAMILY</code></p>
+
+  <div class="note tip"><b>디버깅 팁:</b> 첫 still image가 검은 화면이면 <code>OnBufferingStateChange</code>의 <code>BUFFERING_HAVE_ENOUGH</code>에서 <code>OnVideoSurfaceCreated</code>가 발화되는지 확인(PAUSED preroll 완료 시점). 위치가 어긋나면 <code>gstreamer_video_hole.cc</code>의 <code>SetVideoRect</code> 로그 추적.</div>
+</section>
+
+<!-- ================= 02 AUDIO ================= -->
+<section id="audio">
+  <h2 class="sec">02 · 오디오 · 9-hop · Audio Focus</h2>
+  <p class="sec-sub">소리가 차량 스피커로 나가기까지. 설정값은 9계층을 타고 내려가고, 처음엔 일부러 "가짜 스피커"에 물려둔다.</p>
+
+  <div class="hero">
+    <div class="lbl">비유</div>
+    <p>오디오 설정은 <b>9명이 손에서 손으로 쪽지를 전달</b>하듯 내려갑니다(한 명이라도 안 넘기면 무음). 그리고 소리는 처음엔 <b>가짜 스피커(fakesink)</b>에 연결돼 안 들리다가, <b>차량 오디오 포커스를 얻은 순간 진짜 스피커(haudiosink)</b>로 갈아끼워집니다.</p>
+  </div>
+
+  <h3>9-hop setter chain</h3>
+  <p><code>SetAppId</code> / <code>SetSourceType</code> / <code>SetAudioSourceStatus</code> 가 이 9계층을 순차 전달됩니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant HME as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant PC as PipelineController
+  participant PI as PipelineImpl(RendererWrapper)
+  participant DR as DecryptingRenderer
+  participant MW as MojoRendererWrapper
+  participant MR as MojoRenderer
+  participant RI as RendererImpl
+  participant GR as GStreamerRendererImpl
+  HME->>WMP: SetAppId(id)
+  WMP->>PC: SetAppId(id)
+  PC->>PI: SetAppId(id)
+  PI->>DR: SetAppId(id)
+  DR->>MW: SetAppId(id)
+  MW->>MR: SetAppId(id)
+  Note over MR,RI: ══ mojo IPC 프로세스 경계 ══
+  MR->>RI: remote_renderer_->SetAppId(id)
+  RI->>GR: nm_renderer_->SetAppId(id)
+  GR->>GR: gst_audio_sink_->SetAppId(id)
+    </pre>
+    <div class="cap"><span class="badge b-r">Renderer</span> hop 1~7(MojoRenderer) · <span class="badge b-m">Media Service</span> hop 8~9. <b>DecryptingRenderer가 override를 빠뜨리면</b> base 빈 구현으로 떨어져 그 아래 전달이 끊김(무음 단골 진범).</div>
+  </div>
+
+  <h3>fakesink → haudiosink 전환 (Audio Focus 게이트)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  A["AddDefaultAudioSink()<br/>audioconvert→audioresample→volume→fakesink"]:::m --> B["재생 시작<br/>(소리는 안 남, 버퍼링만)"]:::m
+  B --> C{"SwitchToActualAudioSinkImpl()<br/>port::Audio::hasAudioFocus(appId)?"}:::m
+  C -->|"포커스 없음"| D["fakesink 유지 = 무음"]:::dim
+  C -->|"포커스 있음"| E["fakesink 제거 → haudiosink 생성"]:::b
+  E --> F["g_object_set(sink,'stream-id',N)<br/>(source_type 파싱, 기본 122)"]:::b
+  F --> G["차량 오디오 HAL → 스피커"]:::b
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef b fill:#1e5f33,stroke:#22c55e,color:#fff;
+  classDef dim fill:#21262d,stroke:#444,color:#9da7b3;
+    </pre>
+  </div>
+  <p><code>stream-id</code>는 차량 오디오 HAL의 출력 경로(어느 채널/존)를 가릅니다. <code>WebAudioManager</code>가 mojo로 browser AudioManager에 물어 <code>device_name</code>을 받고 거기서 stream id를 뽑습니다.</p>
+
+  <h3>동시 재생은 누가 이기나 (Audio Focus)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  participant Nav as 내비 (app:nav)
+  participant Web as 음악 웹앱 (app:music)
+  participant AFM as AudioFocusManager
+  Nav->>AFM: requestAudio()
+  Web->>AFM: requestAudio()
+  AFM->>AFM: 승자 1명 결정 (active = nav)
+  Note over Web: hasAudioFocus(music)=false → fakesink 유지(무음)
+  Note over Nav: hasAudioFocus(nav)=true → haudiosink(소리)
+  Web->>AFM: 사용자가 music 탭 활성화
+  AFM->>AFM: active = music 로 전환
+  Note over Nav: 포커스 상실 → fakesink (음소거)
+  Note over Web: 포커스 획득 → haudiosink (소리 시작)
+    </pre>
+  </div>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — 오디오 경로 <span class="cnt">9개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">blink/.../webaudiomanager/web_audio_manager.cpp</span> · <span class="sym">requestAudio() ~L194, availableAudioSink() ~L63</span><span class="d">browser AudioManager와 mojo 통신. device_name → stream id 결정.</span></div>
+      <div class="ref"><span class="path">media/filters/pipeline_controller.cc</span> · <span class="sym">SetSourceType/SetAppId ~L493</span><span class="d">hop 3: pipeline_으로 forward.</span></div>
+      <div class="ref"><span class="path">media/base/pipeline_impl.cc</span> · <span class="sym">RendererWrapper::SetAppId ~L748</span><span class="d">hop 4: media task runner로 PostTask. source_type_/app_id_ stash(재flush용).</span></div>
+      <div class="ref"><span class="path">media/renderers/decrypting_renderer.cc</span> · <span class="sym">SetSourceType/SetAppId ~L155</span><span class="d">hop 5: ★override 누락 시 base 빈 구현으로 추락 = 무음 진범.</span></div>
+      <div class="ref"><span class="path">media/mojo/clients/mojo_renderer.cc</span> · <span class="sym">SetAppId ~L269</span><span class="d">hop 7: remote_renderer_->SetAppId() = 프로세스 경계 IPC. Initialize/OnInitialized에서 stash 값 재전송.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/gstreamer_renderer_impl.cc</span> · <span class="sym">SetAppId ~L1466, NewAudioAdded() ~L943</span><span class="d">hop 9: gst_audio_sink_로 전달. audio pad 생성 시 저장된 source_type_/app_id_ 적용.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/sink/audio/haudiosink.cc</span> · <span class="sym">SwitchToActualAudioSinkImpl() ~L31, AddDefaultAudioSink() ~L129</span><span class="d">fakesink→haudiosink 전환, hasAudioFocus 게이트, stream-id 세팅.</span></div>
+      <div class="ref"><span class="path">obigo/extension/media/audio_focus_manager.{cc,h}</span><span class="d">동시재생 중재. MOBIS=앱ID당 1소스, MOTREX=화면×소스 다중.</span></div>
+      <div class="ref"><span class="path">obigo/port/media/ccnc/Audio.cc</span> · <span class="sym">hasAudioFocus(), setSystemVolume()</span><span class="d">차량 오디오 HAL(WebAppAudioController) 연결.</span></div>
+    </div>
+  </details>
+
+  <h4>핵심 매크로</h4>
+  <p><code>OBIGO_WS_AUDIO_MANAGER</code> (현행) · <code>OBIGO_AUDIO_MANAGER</code> (구) · <code>OBIGO_USE_MEDIA_SERVICE</code> · <code>MOBIS_NVIDIA</code> · <code>MOBIS_DOLPHIN3</code></p>
+  <div class="note warn"><b>가드 통합 함정(GWUR-74):</b> <code>#if OBIGO_AUDIO_MANAGER</code> outer 가드를 풀 때 안의 nested inner 가드 코드까지 함께 지우면 71+ 파일에서 audio routing이 끊깁니다. inner 코드는 보존해야 합니다.</div>
+</section>
+
+<!-- ================= 03 WEBAUDIO ================= -->
+<section id="webaudio">
+  <h2 class="sec">03 · WebAudio</h2>
+  <p class="sec-sub">new AudioContext()로 만든 소리. &lt;audio&gt; 태그와 완전히 다른 길로 나간다 — blink이 직접 그래프를 렌더링한다.</p>
+
+  <div class="hero">
+    <div class="lbl">비유</div>
+    <p><code>&lt;audio&gt;</code>가 <b>"녹음된 음원을 트는 것"</b>이라면, WebAudio는 <b>"신디사이저로 실시간 연주하는 것"</b>입니다. 그래서 디코더·GStreamer를 거치지 않고, blink이 매 순간 노드 그래프를 계산(pull)해 platform sink로 바로 흘려보냅니다.</p>
+  </div>
+
+  <h3>표준 WebAudio 모듈 라우팅 (W3C)</h3>
+  <p>WebAudio는 <code>AudioNode</code>들을 연결한 그래프입니다. 소스(Oscillator/BufferSource) → 효과(Gain/Filter/Convolver) → <code>destination</code>으로 흐릅니다.</p>
+  <div class="diagram">
+    <img src="./lib/img/webaudio-modular-routing.png" alt="Web Audio modular routing" style="max-width:540px;width:100%;background:#fff;border-radius:8px;padding:12px">
+    <div class="cap">출처: <a href="https://www.w3.org/TR/webaudio/" target="_blank">W3C Web Audio API</a> — 여러 소스가 reverb·compressor를 거쳐 destination으로 합쳐지는 modular routing.</div>
+  </div>
+
+  <h3>실제 렌더 경로 (pull 방식)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  JS["JS: Oscillator → Gain → ctx.destination"]:::r --> RH["RealtimeAudioDestinationHandler::Render()<br/>오디오 스레드 · 128샘플/quantum"]:::r
+  RH --> AD["AudioDestination (platform/audio)"]:::r
+  AD --> OUT["오디오 출력 장치"]:::b
+  RH -. "선택적 상태 동기화" .-> WAM["WebAudioManager (mojo)"]:::r
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef b fill:#1e5f33,stroke:#22c55e,color:#fff;
+    </pre>
+    <div class="cap">MediaElement는 디코더가 데이터를 <b>밀어내는(push)</b> 반면, WebAudio는 platform이 매 quantum마다 그래프를 <b>당겨가는(pull)</b> 구조입니다.</div>
+  </div>
+
+  <h3>MediaElement 오디오 vs WebAudio — 헷갈리는 핵심</h3>
+  <table>
+    <thead><tr><th>항목</th><th>HTMLMediaElement &lt;audio&gt;</th><th>WebAudio (AudioContext)</th></tr></thead>
+    <tbody>
+      <tr><td>시작점</td><td><code>&lt;audio src&gt;</code> 태그</td><td><code>new AudioContext()</code></td></tr>
+      <tr><td>코드 경로</td><td>9-hop → GStreamer (섹션 02)</td><td>blink 내부 그래프 렌더</td></tr>
+      <tr><td>소스 타입</td><td><code>kAudioSourceMain</code></td><td><code>kAudioSourceNoAudio (1000)</code></td></tr>
+      <tr><td>렌더 방식</td><td>push (디코더가 밀어냄)</td><td>pull (매 quantum 당겨감)</td></tr>
+      <tr><td>차량 오디오 포커스</td><td>받음</td><td>기본 비포커스(백그라운드 가능)</td></tr>
+    </tbody>
+  </table>
+  <div class="note info"><b>핵심:</b> 같은 "오디오"라도 두 경로가 코드 레벨에서 완전히 분리돼 있습니다. <b>9-hop/GStreamer = MediaElement 길, blink 내부 = WebAudio 길.</b> 처음 가장 헷갈리는 지점입니다.</div>
+
+  <h3>Obigo 패치</h3>
+  <p><code>AudioContext</code>에 차량 오디오 매니저와 엮을 멤버가 추가됐습니다: <code>audioManager_</code>, <code>media_id_</code>, <code>stream_id_</code>, <code>extra_data_</code>. 필요 시 <code>WebAudioManager</code>를 통해 차량 포커스에 상태를 동기화합니다.</p>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — WebAudio <span class="cnt">5개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">blink/.../modules/webaudio/audio_context.h</span> · <span class="sym">audioManager_, media_id_, stream_id_ ~L423</span><span class="d">OBIGO 패치 멤버. AudioContext ↔ 차량 오디오 연동 지점.</span></div>
+      <div class="ref"><span class="path">blink/.../modules/webaudio/realtime_audio_destination_handler.h</span> · <span class="sym">Render() ~L28</span><span class="d">오디오 스레드에서 그래프를 pull 렌더. AudioIOCallback 구현.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/audio/audio_destination.h</span> · <span class="sym">Render() ~L72</span><span class="d">WebAudio 그래프 ↔ platform 오디오 장치 어댑터.</span></div>
+      <div class="ref"><span class="path">blink/.../webaudiomanager/web_audio_manager.cpp</span> · <span class="sym">requestAudio() ~L194 (kAudioSourceNoAudio 즉시 ready)</span><span class="d">WebAudio는 NoAudio 소스라 차량 싱크 경합 없이 onAudioSinkReady().</span></div>
+      <div class="ref"><span class="path">blink/public/web/obigo/WebAudioManagerClient.h</span><span class="d">MediaPlayerSourceType()로 MediaElement vs WebAudio 구분.</span></div>
+    </div>
+  </details>
+</section>
+
+<!-- ================= 04 CDM ================= -->
+<section id="cdm">
+  <h2 class="sec">04 · CDM · DRM (Widevine)</h2>
+  <p class="sec-sub">Watcha·Netflix 같은 암호화 영상. EME로 CDM을 띄워 라이선스를 받고, 격리된 프로세스에서 복호화한다.</p>
+
+  <div class="hero">
+    <div class="lbl">비유</div>
+    <p>암호화 영상은 <b>잠긴 금고</b>입니다. JS(EME)가 <b>열쇠(라이선스)</b>를 라이선스 서버에서 받아오고, 실제 금고 해제는 보안상 <b>격리된 방(sandbox CDM 프로세스)</b>의 Widevine이 합니다. 해제된 영상만 GStreamer 디코더로 넘어갑니다.</p>
+  </div>
+
+  <h3>표준 EME 스택 (W3C)</h3>
+  <div class="diagram">
+    <img src="./lib/img/eme-stack.svg" alt="EME stack" style="max-width:600px;width:100%;background:#fff;border-radius:8px;padding:14px">
+    <div class="cap">출처: <a href="https://www.w3.org/TR/encrypted-media/" target="_blank">W3C Encrypted Media Extensions</a> — JS · EME · CDM · 라이선스 서버의 일반 스택.</div>
+  </div>
+
+  <h3>라이선스 교환 시퀀스</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant JS as JS (웹앱)
+  participant EME as EME (blink)
+  participant CDM as Widevine CDM<br/>(sandbox 프로세스)
+  participant LS as License Server
+  JS->>EME: requestMediaKeySystemAccess("com.widevine.alpha")
+  Note over JS: video 재생 → "encrypted" 이벤트(initData)
+  JS->>EME: session.generateRequest("cenc", initData)
+  EME->>CDM: 세션 생성 요청
+  CDM-->>JS: OnSessionMessage(라이선스 요청)
+  JS->>LS: POST 라이선스 요청
+  LS-->>JS: 라이선스 응답
+  JS->>EME: session.update(license)
+  EME->>CDM: 키 설치
+  CDM-->>JS: OnSessionKeysChange(usable)
+  Note over CDM: 이후 Decrypt() → GStreamer 디코더 → 화면
+    </pre>
+  </div>
+
+  <h3>프로세스 모델 (정확히)</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  subgraph R["🟦 Renderer 프로세스"]
+    EME2["EME modules<br/>(encryptedmedia/)"]
+    ADP["CdmSessionAdapter<br/>(platform/media)"]
+    DEC["GStreamerMediaDecoder<br/>cdm_context_->GetDecryptor()"]
+    EME2 --> ADP
+  end
+  subgraph C["🟥 CDM utility 프로세스 (sandbox)"]
+    PW["PluginForWideVine"]
+    WR["PluginForWideVineWrapper<br/>libc++ ↔ libstdc++ ABI 격리"]
+    WV["Widevine CE CDM"]
+    PW --> WR --> WV
+  end
+  ADP == "mojo" ==> PW
+  DEC == "복호화 요청" ==> PW
+    </pre>
+    <div class="cap"><b>주의:</b> <code>CdmSessionAdapter</code>는 <span class="badge b-r">Renderer</span>에 있고, 실제 Widevine 라이브러리는 <span class="badge b-c">별도 샌드박스 CDM 프로세스</span>에서 돕니다. 둘은 mojo로 통신.</div>
+  </div>
+
+  <h3>Obigo의 핵심 커스터마이즈</h3>
+  <ul>
+    <li><b>경로 환경변수화:</b> <code>OBIGO_W_CDM_DIR</code>, <code>OBIGO_AF_DIR</code>로 CDM <code>.so</code>·매니페스트 위치 지정 (표준 Chrome은 번들/컴포넌트 업데이터).</li>
+    <li><b>ABI 격리 wrapper:</b> Widevine CE CDM은 <code>libstdc++</code>(sizeof std::string=32), Obigo는 <code>libc++</code>(=24). <code>plugin_for_widevine_wrapper</code> + <code>event_listener_wrapper</code>(15.3/16.4)가 메모리 레이아웃을 맞춰 충돌을 막습니다 — GWUR-71의 진짜 해법.</li>
+    <li><b>샌드박스:</b> <code>bpf_cdm_policy_linux.cc</code>에서 <code>dlopen</code>·네트워크 syscall 허용(<code>OBIGO_DRM_WIDEVINE</code>).</li>
+  </ul>
+  <div class="note bug"><b>ABI 함정 한 줄 요약:</b> 두 라이브러리가 <code>std::string</code>을 다른 크기로 본다. wrapper 없이 직접 호출하면 메모리가 어긋나 복호화가 깨진다.</div>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — CDM/DRM <span class="cnt">8개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">blink/.../modules/encryptedmedia/navigator_request_media_key_system_access.cc</span> · <span class="sym">requestMediaKeySystemAccess() ~L125</span><span class="d">EME 진입점. key system 검증 → 권한 정책 확인 → Promise.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/media/key_system_config_selector.cc</span><span class="d">요청 config를 지원 codec/encryption과 매칭.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/media/cdm_session_adapter.cc</span> · <span class="sym">CreateCdm() ~L36</span><span class="d">CDM 팩토리로 인스턴스 생성, 세션 콜백(message/closed/keysChange) 관리.</span></div>
+      <div class="ref"><span class="path">chrome/common/media/cdm_registration.cc</span> · <span class="sym">CreateCdmInfoFromObigoWidevine() ~L301</span><span class="d">OBIGO_DRM_WIDEVINE. L1/L3 CDM 경로 등록.</span></div>
+      <div class="ref"><span class="path">chrome/common/chrome_paths.cc</span> · <span class="sym">DIR_OBIGO_WIDEVINE_CDM ~L318</span><span class="d">OBIGO_W_CDM_DIR / OBIGO_AF_DIR 환경변수에서 경로 해석.</span></div>
+      <div class="ref"><span class="path">media/cdm/library_cdm/obigo_widevine_cdm/plugin_for_widevine.cc</span> · <span class="sym">CreateCdmInstance() ~L44</span><span class="d">CDM 인터페이스 버전 협상(CDM_10/CDM_11).</span></div>
+      <div class="ref"><span class="path">media/cdm/library_cdm/obigo_widevine_cdm/plugin_for_widevine_wrapper.h</span> · <span class="sym">LibstdcppString ~L15</span><span class="d">libstdc++ std::string/map 레이아웃 에뮬레이션(ABI 격리).</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/decoders/gstreamer_media_decoder.cc</span> · <span class="sym">Initialize() cdm_context_->GetDecryptor()</span><span class="d">복호기 획득 → 디코딩 전 Decrypt().</span></div>
+    </div>
+  </details>
+
+  <h4>핵심 매크로</h4>
+  <p><code>OBIGO_DRM_WIDEVINE</code> · <code>ENABLE_LIBRARY_CDMS</code> · <code>WIDEVINE_CDM_15_3</code> / <code>WIDEVINE_CDM_16_4</code></p>
+</section>
+
+<!-- ================= 05 EXTENSION + PICKNOW ================= -->
+<section id="picknow">
+  <h2 class="sec">05 · Obigo 익스텐션 · PickNow</h2>
+  <p class="sec-sub">웹앱 미디어가 차량 헤드유닛 화면에 곡 정보·재생상태·썸네일로 뜨기까지.</p>
+
+  <div class="hero">
+    <div class="lbl">비유</div>
+    <p>웹앱이 노래를 틀면, <b>비서(익스텐션)</b>가 곡 제목·아티스트·재생상태를 받아적어, <b>차량 전광판(PickNow → 헤드유닛)</b>에 띄웁니다. 동시에 <b>AudioFocusManager</b>가 "누가 스피커를 쓸지" 교통정리를 합니다.</p>
+  </div>
+
+  <h3>연동 체인</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  W["웹앱 미디어 이벤트<br/>(MediaSession API)"]:::r --> AC["AudioClient<br/>(interface/audio)"]:::b
+  AC --> AP["AppPolicy → BookmarkPolicy<br/>onMediaSessionMetaDataChanged 등"]:::b
+  AP --> MSM["MediaSessionManager<br/>app_id별 세션·메타데이터 저장"]:::b
+  MSM --> PN["port::PickNow<br/>notifyMetaData / Image / Status"]:::b
+  PN --> HMI["WebCommonHmi::setPopupPlayerData(JSON)"]:::w
+  HMI --> HU["차량 헤드유닛 HMI"]:::w
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef b fill:#1e5f33,stroke:#22c55e,color:#fff;
+  classDef w fill:#5f3f1e,stroke:#f59e0b,color:#fff;
+    </pre>
+  </div>
+
+  <h3>PickNow가 보내는 JSON</h3>
+  <p>PickNow는 메타데이터를 JSON으로 직렬화해 <code>setPopupPlayerData()</code>로 헤드유닛에 보냅니다.</p>
+  <pre><code class="language-json">{ "command": "metadata",
+  "data": { "category": "music", "title": "Dynamite", "artist": "BTS" } }
+
+{ "command": "playstate",
+  "data": { "play_state": "playing", "availability": true } }
+
+{ "command": "actions",
+  "data": { "actions": ["play", "pause", "next", "previous"] } }
+
+{ "command": "imagechanged",
+  "data": { "hasImage": true } }</code></pre>
+
+  <h3>MOBIS_CCNC vs MOTREX_CCNC — 같은 기능, 다른 인터페이스</h3>
+  <table>
+    <thead><tr><th>항목</th><th>MOBIS (ccnc/)</th><th>MOTREX (mtx/)</th></tr></thead>
+    <tbody>
+      <tr><td>재생상태 전달</td><td><code>notifyMediaSessionInfoChanged(string)</code></td><td><code>notifyPlaybackStatusChanged(enum)</code></td></tr>
+      <tr><td>재생상태 표현</td><td>문자열 ("playing"/"paused")</td><td><code>MediaSessionPlayState</code> enum</td></tr>
+      <tr><td>썸네일</td><td><code>notifyImageChanged(bool)</code> 단일</td><td><code>notifyImageUrl()</code> + <code>notifyImageDownloadComplete()</code></td></tr>
+      <tr><td>앱ID</td><td><code>"uplustvweb"</code> 하드코딩(TODO)</td><td><code>"ccos.hmi.picknowweb..."</code></td></tr>
+      <tr><td>오디오 포커스</td><td>앱ID당 1소스</td><td>화면(센터/뒷좌석) × 소스 다중</td></tr>
+    </tbody>
+  </table>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — 익스텐션 · PickNow <span class="cnt">7개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">obigo/extension/interface/audio/ccnc/AudioClient_ccnc.cc</span> · <span class="sym">NotifyActionsChanged() ~L184, NotifyMetadataChanged() ~L195</span><span class="d">웹 → 익스텐션 진입. AppPolicy로 전달.</span></div>
+      <div class="ref"><span class="path">obigo/extension/app/ccnc/policy/bookmark_policy_ccnc.cc</span> · <span class="sym">onMediaSessionMetaDataChanged() ~L295</span><span class="d">meta_data_ 갱신 → port::PickNow 호출.</span></div>
+      <div class="ref"><span class="path">obigo/extension/media/ccnc/media_session_manager_ccnc.cc</span> · <span class="sym">notifyPlayStateChanged() ~L43, updateMetaData() ~L112</span><span class="d">app_id별 MediaSessionEntry 맵 관리.</span></div>
+      <div class="ref"><span class="path">obigo/port/picknow/PickNow.h</span> · <span class="sym">notifyMetaDataChanged / notifyImageChanged / notify…StatusChanged</span><span class="d">Singleton 인터페이스. MOTREX/MOBIS 시그니처 분기.</span></div>
+      <div class="ref"><span class="path">obigo/port/picknow/ccnc/PickNow.cc</span> · <span class="sym">notifyMetaDataChanged() ~L247</span><span class="d">JSON 직렬화 → WebCommonHmi::setPopupPlayerData().</span></div>
+      <div class="ref"><span class="path">obigo/extension/media/audio_focus_manager.{cc,h}</span><span class="d">동시재생 중재(MOBIS 단일 / MOTREX 다중).</span></div>
+      <div class="ref"><span class="path">obigo/extension/media/video_manager.h</span> · <span class="sym">createVideoWindow ~L77, videoSurfaceCreated ~L85</span><span class="d">비디오 윈도우 생성·서피스 등록·z-order(섹션 01과 연결).</span></div>
+    </div>
+  </details>
+</section>
+
+<!-- ================= 10 LIFECYCLE (DEEP DIVE) ================= -->
+<section id="lifecycle">
+  <h2 class="sec">10 · 생성 → GStreamer → 재생 라이프사이클</h2>
+  <p class="sec-sub">&lt;video&gt; 요소가 만들어지는 순간부터 GStreamer 파이프라인이 PLAYING이 되기까지, 큰 단계(category)별로 어떤 클래스가 등장하고 무슨 일을 하는가.</p>
+
+  <div class="hero">
+    <div class="lbl">한눈에</div>
+    <p>크게 <b>6단계</b>입니다: <b>① 요소·리소스 선택 → ② WebMediaPlayer 생성·로드 → ③ Demuxer·Pipeline 시작 → ④ 메타데이터·Renderer 생성(GStreamer 주입) → ⑤ GStreamer 초기화(PAUSED preroll) → ⑥ play→PLAYING.</b> ①~③ 초반은 <b>Renderer 메인 스레드</b>, ④부터는 <b>Media Task Runner</b>로 넘어갑니다.</p>
+  </div>
+
+  <h3>전체 단계 지도</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  A["① 요소·리소스 선택<br/>HTMLMediaElement"]:::main --> B["② WebMediaPlayer 생성·로드<br/>WebMediaPlayerImpl"]:::main
+  B --> C["③ Demuxer 생성·Pipeline 시작<br/>DemuxerManager · PipelineController · PipelineImpl"]:::main
+  C -. "media task runner로 전환" .-> D["④ 메타데이터·Renderer 생성<br/>RendererWrapper · RendererImplFactory · RendererImpl"]:::media
+  D --> E["⑤ GStreamer 초기화 (PAUSED preroll)<br/>GStreamerRendererImpl · sink · VideoHole"]:::media
+  E --> F["⑥ play → PLAYING<br/>PlayInternal → SetPlaybackRate → PendingSetState"]:::media
+  classDef main fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef media fill:#3b1e5f,stroke:#a855f7,color:#fff;
+    </pre>
+    <div class="cap"><span class="badge b-r">Renderer 메인 스레드</span> ①~③ · <span class="badge b-m">Media Task Runner</span> ④~⑥. 두 스레드 경계는 <code>PipelineImpl::Start()</code>의 <code>PostTask(RendererWrapper::Start)</code>.</div>
+  </div>
+
+  <h3>① 요소 생성 &amp; 리소스 선택</h3>
+  <p><code>&lt;video&gt;</code>에 src가 붙거나 <code>load()</code>가 불리면 HTMLMediaElement의 load 알고리즘이 돌고, 끝에서 <b>WebMediaPlayer를 생성</b>합니다. 아직 디코딩은 시작 안 됩니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant DOM as DOM / JS
+  participant HME as HTMLMediaElement
+  participant FC as LocalFrameClient
+  DOM->>HME: #lt;video src#gt; 또는 load()
+  HME->>HME: InvokeLoadAlgorithm()
+  HME->>HME: SelectMediaResource() · LoadResource() (URL·보안·preload)
+  HME->>HME: StartPlayerLoad()
+  HME->>FC: CreateWebMediaPlayer(*this, source, this)
+  FC-->>HME: unique_ptr#lt;WebMediaPlayer#gt;
+    </pre>
+    <div class="cap">html_media_element.cc — InvokeLoadAlgorithm ~L1122 · SelectMediaResource ~L1308 · StartPlayerLoad ~L1665 · CreateWebMediaPlayer 호출 ~L1745. <span class="badge b-r">Renderer 메인</span></div>
+  </div>
+
+  <h3>② WebMediaPlayer 생성 &amp; 로드 시작</h3>
+  <p>생성자가 <b>파이프라인 3종 세트</b>(PipelineController·PipelineImpl·RendererFactorySelector)와 DemuxerManager를 갖춥니다. <code>Load()</code>→<code>DoLoad()</code>에서 네트워크 데이터소스를 붙이고 <code>StartPipeline()</code>으로 넘어갑니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant HME as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant DM as DemuxerManager
+  participant DS as MultiBufferDataSource
+  HME->>WMP: ctor (pipeline_controller_ · renderer_factory_selector_ · demuxer_manager_)
+  HME->>WMP: Load(url)
+  WMP->>WMP: DoLoad() — networkState=LOADING, readyState=HAVE_NOTHING
+  WMP->>DS: MultiBufferDataSource 생성
+  WMP->>DM: SetDataSource()
+  WMP->>WMP: StartPipeline()
+    </pre>
+    <div class="cap">web_media_player_impl.cc — ctor ~L464 · DoLoad ~L983 · StartPipeline ~L3224. <span class="badge b-r">Renderer 메인</span></div>
+  </div>
+
+  <h3>③ Demuxer 생성 &amp; Pipeline 시작</h3>
+  <p>컨테이너 종류에 따라 Demuxer를 고르고(MSE면 ChunkDemuxer, 일반 URL이면 FFmpegDemuxer), PipelineController→PipelineImpl로 시작 신호를 보냅니다. 여기서 <b>스레드가 Media Task Runner로 넘어갑니다.</b></p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant WMP as WebMediaPlayerImpl
+  participant DM as DemuxerManager
+  participant PC as PipelineController
+  participant PI as PipelineImpl
+  WMP->>DM: CreateDemuxer()
+  alt MediaSource (MSE)
+    DM->>DM: ChunkDemuxer 생성
+  else 일반 URL
+    DM->>DM: FFmpegDemuxer 생성
+  end
+  DM-->>WMP: OnDemuxerCreated(demuxer)
+  WMP->>PC: Start(demuxer, client)
+  PC->>PI: pipeline_->Start()
+  PI->>PI: create_renderer_cb_.Run() — default renderer
+  Note over PI: media_task_runner_->PostTask(RendererWrapper::Start) ★스레드 전환
+    </pre>
+    <div class="cap">demuxer_manager.cc CreateDemuxer ~L278 · pipeline_controller.cc Start ~L38 · pipeline_impl.cc Start ~L1660. <span class="badge b-r">메인</span> → <span class="badge b-m">Media</span></div>
+  </div>
+
+  <h3>④ 메타데이터 &amp; Renderer 생성 (GStreamer 주입)</h3>
+  <p>RendererWrapper가 <b>SerialRunner 큐</b>로 4가지를 순서대로 실행합니다: Demuxer 초기화 → 메타데이터 보고(readyState=HAVE_METADATA) → Renderer 생성 → Renderer 초기화. 생성 단계에서 <code>OBIGO_USE_GSTREAMER_RENDER</code> 분기로 <b>GStreamerRendererImpl이 주입</b>됩니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant RW as RendererWrapper
+  participant DX as Demuxer (FFmpeg/Chunk)
+  participant WMP as WebMediaPlayerImpl::CreateRenderer
+  participant RF as RendererImplFactory
+  participant RI as RendererImpl
+  Note over RW: SerialRunner 큐 (순차)
+  RW->>DX: InitializeDemuxer() → demuxer_->Initialize()
+  DX-->>RW: 스트림·메타데이터
+  RW->>RW: ReportMetadata() → readyState=HAVE_METADATA
+  RW->>WMP: CreateRenderer() (create_renderer_cb_)
+  WMP->>RF: GetCurrentFactory()->CreateRenderer()
+  RF->>RI: RendererImpl(audio, video, GStreamerRendererImpl)
+  RW->>RI: InitializeRenderer() → renderer->Initialize(demuxer, ...)
+    </pre>
+    <div class="cap">pipeline_impl.cc RendererWrapper::Start ~L360 · InitializeDemuxer ~L1415 · CreateRenderer ~L1422 · InitializeRenderer ~L1461 · renderer_impl_factory.cc ~L162. <span class="badge b-m">Media Task Runner</span></div>
+  </div>
+
+  <h3>⑤ GStreamer 파이프라인 초기화 (PAUSED preroll)</h3>
+  <p>RendererImpl이 native renderer를 Initialize하면 GStreamerRendererImpl이 sink·video hole을 만들고 <code>InitializeGStreamer()</code>에서 실제 GStreamer 파이프라인(appsrc→decodebin→sink)을 조립한 뒤 <b>PAUSED 상태로 preroll</b>(첫 프레임까지 디코드)합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant RI as RendererImpl
+  participant GR as GStreamerRendererImpl
+  participant SK as HVideoSink / HAudioSink
+  participant VH as GStreamerVideoHole
+  RI->>GR: Initialize(video_stream, audio_stream, cdm, client)
+  GR->>SK: CreateVideoSink / CreateAudioSink
+  GR->>VH: video hole 초기화
+  GR->>GR: InitializeGStreamer()
+  GR->>GR: gst_init · pipeline_new · decodebin 조립 · bus_watch 등록
+  GR->>GR: GstElementSetState(GST_STATE_PAUSED) — preroll 시작
+    </pre>
+    <div class="cap">gstreamer_renderer_impl.cc Initialize ~L149 · InitializeGStreamer ~L293 · bus watch ~L382 · PAUSED ~L384. <span class="badge b-m">Media Task Runner</span> (이후 GStreamer 스레드)</div>
+  </div>
+
+  <h3>⑥ play → PLAYING 상태 전이</h3>
+  <p>사용자/JS가 <code>play()</code>를 부르면 blink 상태머신을 거쳐 WebMediaPlayerImpl→Pipeline로 재생률이 내려가고, 다시 Media Task Runner에서 GStreamerRendererImpl이 파이프라인을 PLAYING으로 올립니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant JS as JS
+  participant HME as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant PC as PipelineController
+  participant PI as PipelineImpl / RendererWrapper
+  participant GR as GStreamerRendererImpl
+  JS->>HME: play()
+  HME->>HME: PlayInternal() (paused_=false)
+  HME->>HME: UpdatePlayState()
+  HME->>WMP: SetRate() · SetVolume() · Play()
+  WMP->>PC: SetPlaybackRate(rate)
+  PC->>PI: pipeline_->SetPlaybackRate()
+  Note over PI: PostTask → RendererWrapper::SetPlaybackRate
+  PI->>GR: renderer->SetPlaybackRate()
+  GR->>GR: PendingSetState(GST_STATE_PLAYING)
+  GR->>GR: GstElementSetState(PLAYING)
+    </pre>
+    <div class="cap">html_media_element.cc PlayInternal ~L3247 · UpdatePlayState ~L4357 · web_media_player_impl.cc Play ~L1070 · gstreamer_renderer_impl.cc SetPlaybackRate ~L804 · PendingSetState ~L712. <span class="badge b-r">메인</span> → <span class="badge b-m">Media</span></div>
+  </div>
+
+  <h3>등장 클래스 카탈로그</h3>
+  <p>위 6단계에 나오는 클래스들의 역할과 주요 함수입니다 (클래스 레벨, 너무 깊은 내부는 생략).</p>
+  <table>
+    <thead><tr><th>클래스</th><th>계층 · 스레드</th><th>역할</th><th>주요 함수와 역할</th></tr></thead>
+    <tbody>
+      <tr><td><b>HTMLMediaElement</b></td><td>blink/core · 메인</td><td>DOM 미디어 요소 + 재생 상태머신. 모든 것의 시작점.</td><td><code>InvokeLoadAlgorithm/SelectMediaResource</code>(리소스 선택) · <code>StartPlayerLoad</code>(WMP 생성) · <code>play/PlayInternal</code>(재생 요청) · <code>UpdatePlayState</code>(WMP에 상태 반영) · <code>SetReadyState</code></td></tr>
+      <tr><td><b>LocalFrameClient</b></td><td>blink/content · 메인</td><td>blink↔content 다리. WebMediaPlayer 실제 생성 팩토리.</td><td><code>CreateWebMediaPlayer()</code> — content의 MediaFactory를 거쳐 WebMediaPlayerImpl 생성</td></tr>
+      <tr><td><b>WebMediaPlayerImpl</b></td><td>blink/platform/media · 메인</td><td>미디어 재생 facade. 파이프라인·demuxer·renderer를 묶어 제어.</td><td><code>ctor</code>(파이프라인 3종 구성) · <code>Load/DoLoad</code>(로드 시작) · <code>StartPipeline</code>(demuxer 생성) · <code>CreateRenderer</code>(renderer 팩토리 호출) · <code>Play</code> · <code>OnMetadata/OnError</code>(콜백)</td></tr>
+      <tr><td><b>DemuxerManager</b></td><td>media · 메인</td><td>데이터소스 연결 + Demuxer 종류 선택·생성.</td><td><code>SetDataSource</code> · <code>CreateDemuxer</code>(MSE→Chunk, URL→FFmpeg)</td></tr>
+      <tr><td><b>Demuxer</b> (FFmpeg/Chunk/MediaUrl)</td><td>media · Media</td><td>컨테이너 파싱 → 오디오/비디오 elementary stream(DemuxerStream).</td><td><code>Initialize</code>(메타데이터 추출) · <code>GetAllStreams</code></td></tr>
+      <tr><td><b>PipelineController</b></td><td>media/filters · 메인</td><td>파이프라인 고수준 상태 조율(start/seek/suspend/resume). WMP가 직접 잡는 핸들.</td><td><code>Start</code> · <code>SetPlaybackRate</code> · <code>Set*</code>(앱ID/소스타입 등 forward)</td></tr>
+      <tr><td><b>PipelineImpl</b> (+RendererWrapper)</td><td>media · 메인→Media</td><td>Demuxer+Renderer 오케스트레이션. RendererWrapper가 Media 스레드에서 실제 일.</td><td><code>Start</code>(스레드 전환) · <code>RendererWrapper::Start</code>(SerialRunner: InitDemuxer→ReportMetadata→CreateRenderer→InitRenderer) · <code>SetPlaybackRate</code></td></tr>
+      <tr><td><b>RendererFactorySelector / RendererImplFactory</b></td><td>media/renderers · Media</td><td>어떤 Renderer를 쓸지 고르고 생성. GStreamer 주입 지점.</td><td><code>GetCurrentFactory</code> · <code>CreateRenderer</code>(<code>OBIGO_USE_GSTREAMER_RENDER</code> 분기로 GStreamerRendererImpl 주입)</td></tr>
+      <tr><td><b>RendererImpl</b></td><td>media/renderers · Media</td><td>audio + video + native(GStreamer) renderer 묶음 래퍼.</td><td><code>Initialize</code>(native renderer까지 초기화) · <code>StartPlayingFrom</code> · <code>SetPlaybackRate</code> · setter forward</td></tr>
+      <tr><td><b>DecryptingRenderer</b></td><td>media/renderers · Media</td><td>CDM 복호 래퍼(암호화 콘텐츠일 때 사이에 낌).</td><td><code>Initialize</code> · setter forward (★override 누락 시 무음/전달 끊김)</td></tr>
+      <tr><td><b>MojoRenderer / MojoRendererWrapper</b></td><td>media/mojo/clients · Media</td><td>프로세스 경계(mojo IPC) 클라이언트. Renderer↔Media Service 경계.</td><td><code>Initialize</code> · <code>SetPlaybackRate</code> · setters(<code>remote_renderer_-&gt;...</code>)</td></tr>
+      <tr><td><b>NativeMediaRenderer</b></td><td>media/renderers/obigo · Media</td><td>GStreamer 추상 인터페이스(순수 가상).</td><td>setter 5종 등 pure virtual 선언</td></tr>
+      <tr><td><b>GStreamerRendererImpl</b></td><td>obigo/gstreamer · Media+GStreamer</td><td>실제 GStreamer 파이프라인 관리. 디코딩·sink·상태 전이 전담.</td><td><code>Initialize/InitializeGStreamer</code>(파이프라인 조립) · <code>NewVideoAdded/NewAudioAdded</code>(pad 연결) · <code>SetPlaybackRate/PendingSetState</code>(상태 전이) · <code>OnMessageHandler</code>(bus 메시지) · <code>Release</code></td></tr>
+      <tr><td><b>HVideoSink / HAudioSink / GStreamerVideoHole</b></td><td>obigo/gstreamer/sink·feature · GStreamer</td><td>비디오는 Wayland IVI 서피스에, 오디오는 차량 stream-id로 출력.</td><td><code>SetVideoSurfaceId</code>(video hole) · <code>AddDefaultAudioSink</code> · <code>SwitchToActualAudioSinkImpl</code>(focus 게이트)</td></tr>
+      <tr><td><b>VideoFrameCompositor</b></td><td>blink/platform/media · compositor</td><td>미디어↔CC 레이어 브릿지(video hole면 구멍만, 아니면 프레임 합성).</td><td><code>PaintSingleFrame</code> · <code>UpdateCurrentFrame</code> · <code>GetCurrentFrame</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="note tip"><b>이 편 읽는 법:</b> 단계 ①~③은 "준비(메인 스레드)", ④~⑥은 "엔진 가동(Media 스레드)"으로 묶어 기억하세요. 스레드 경계는 <code>PipelineImpl::Start</code>의 PostTask와 <code>SetPlaybackRate</code>의 PostTask 두 곳입니다. 줄번호는 앵커이니 정확히는 심볼명으로 검색하세요.</div>
+</section>
+
+<!-- ================= 11 GEOMETRY + SURFACE + WAYLAND ================= -->
+<section id="geometry">
+  <h2 class="sec">11 · 비디오 크기 · 서피스 · Wayland 연결</h2>
+  <p class="sec-sub">화면 크기는 어떻게 정해져 extension/browser까지 가는가, surface id는 어떻게 얻어지고 Wayland surface와 연결되어 첫 프레임이 뜨는가.</p>
+
+  <div class="hero">
+    <div class="lbl">가장 중요한 한 가지</div>
+    <p><b><code>surface_id</code> 가 두 프로세스를 잇는 유일한 끈입니다.</b> GStreamer는 그 surface에 <b>픽셀을 그리고</b>(`ivisurface-id` 프로퍼티), 브라우저는 같은 surface의 <b>위치·크기·표시여부만</b> ILM(ivi-shell)으로 제어합니다. 둘은 서로 직접 통신하지 않고, <b>Wayland 컴포지터가 같은 <code>surface_id</code>로 둘을 1:1로 묶습니다.</b></p>
+  </div>
+
+  <h3>큰 그림 — 두 트랙이 컴포지터에서 만난다</h3>
+  <p>비디오 표시는 사실 <b>독립된 두 흐름</b>입니다. ㉠ <b>크기(rect)</b>가 흐르는 길과, ㉡ <b>surface_id + 픽셀</b>이 흐르는 길. 둘 다 같은 <code>surface_id</code>를 들고 Wayland 컴포지터에서 합쳐집니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+  subgraph TA["㉠ 크기(rect) 트랙"]
+    L1["웹 레이아웃·CSS<br/>video 요소 bounds"]:::r --> L2["VideoLayerImpl::AppendQuads<br/>스크린 rect 계산"]:::r
+    L2 --> L3["VideoFrameCompositor → WebMediaPlayerImpl"]:::r
+    L3 --> L4["delegate → mojo → Browser WebContents"]:::b
+    L4 --> L5["VideoManager::updateVideoRect<br/>offset·fullscreen 보정"]:::b
+    L5 --> L6["port::Hmi::setSubWindowDestRectangle"]:::b
+  end
+  subgraph TB2["㉡ surface_id + 픽셀 트랙"]
+    S1["VideoManager::createVideoWindow<br/>generateSurfaceId()"]:::b --> S2a["① GStreamer sink<br/>g_object_set('ivisurface-id', id)"]:::m
+    S1 --> S2b["② Browser createSubWindow(id)<br/>IVISurface 등록"]:::b
+  end
+  L6 --> ILM["🟧 Wayland 컴포지터 (ivi-shell / ILM)<br/>같은 surface_id 로 1:1 식별"]:::w
+  S2a --> ILM
+  S2b --> ILM
+  ILM --> OUT["GStreamer 픽셀을 browser가 정한 rect 에 합성 → 화면"]:::w
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef b fill:#1e5f33,stroke:#22c55e,color:#fff;
+  classDef w fill:#5f3f1e,stroke:#f59e0b,color:#fff;
+    </pre>
+    <div class="cap"><span class="badge b-r">Renderer</span> 크기 계산·surface_id를 sink에 · <span class="badge b-b">Browser/extension</span> 좌표 보정·subwindow · <span class="badge b-w">Wayland</span> 합성</div>
+  </div>
+
+  <h3>㉠ 크기(rect)가 정해져 전달되는 길</h3>
+  <p>크기의 출발점은 <b>웹 레이아웃</b>입니다. CSS가 정한 video 요소 크기가 compositor에서 스크린 좌표 rect가 되고, 그게 mojo로 browser까지 내려가 extension에서 <b>앱 위치·web layout offset·fullscreen</b> 보정을 거쳐 최종 화면 사각형이 됩니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant VL as VideoLayerImpl (compositor)
+  participant VFC as VideoFrameCompositor
+  participant WMP as WebMediaPlayerImpl
+  participant WC as WebContentsImpl (browser)
+  participant VM as VideoManager (extension)
+  participant HMI as port::Hmi
+  participant ILM as Wayland ILM
+  VL->>VL: AppendQuads — bounds × DrawTransform → 스크린 rect
+  VL->>VFC: UpdateVideoRect(rect)
+  VFC->>WMP: UpdateVideoRect(rect)
+  WMP->>WC: delegate->SetVideoRect(surface_id, order, rect) [mojo]
+  WC->>VM: AudioClient → setVideoRect(app_id, surface_id, viewport)
+  VM->>VM: updateVideoRect — app offset + web layout offset (+fullscreen 시 aspect centering)
+  VM->>HMI: setSubWindowDestRectangle(surface_id, x, y, w, h)
+  HMI->>ILM: ilm_surfaceSetDestinationRectangle(surface_id, x, y, w, h)
+    </pre>
+    <div class="cap">video_layer_impl.cc AppendQuads ~L126 · video_frame_compositor.cc UpdateVideoRect ~L209 · web_media_player_impl.cc SetVideoRect ~L2707 · video_manager_ccnc.cc updateVideoRect ~L259 · ivi_surface.cc ilm_* ~L140. <b>크기는 web→device 좌표로, app offset과 web layout offset을 더해 보정됩니다.</b></div>
+  </div>
+
+  <h3>㉡ surface_id 발급 → 양쪽으로 같은 id 전달</h3>
+  <p>미디어가 시작될 때 extension의 <code>createVideoWindow()</code>가 <code>generateSurfaceId()</code>로 <b>하나의 id</b>를 만듭니다. 이 id가 <b>두 갈래</b>로 갑니다: ① 렌더러를 거쳐 GStreamer sink의 <code>ivisurface-id</code> 프로퍼티로(픽셀 그릴 곳), ② 브라우저가 같은 id로 IVI subwindow를 만들어 ILM에 등록(위치 제어할 곳).</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant VM as VideoManager (extension)
+  participant DG as WebAppExtensionDelegate
+  participant WC as WebContentsImpl
+  participant GR as GStreamerRendererImpl (media)
+  participant VH as GStreamerVideoHole
+  participant SINK as gst video sink
+  participant HMI as port::Hmi
+  participant ILM as Wayland ILM
+  Note over VM: 미디어 시작 → createVideoWindow()
+  VM->>VM: surfaceId = generateSurfaceId()
+  par 갈래① 픽셀 쪽
+    VM->>DG: setVideoSurfaceID(screen, app_id, media_id, surfaceId)
+    DG->>WC: SetVideoSurfaceID → video_surface_list_ 저장
+    WC->>GR: WMPI가 GetVideoWindow로 받아 SetVideoSurfaceId(surfaceId)
+    GR->>VH: SetVideoSurfaceId(surfaceId)
+    VH->>SINK: g_object_set('ivisurface-id', surfaceId)
+  and 갈래② 위치 쪽
+    VM->>HMI: createSubWindow(surfaceId) · connectSubWindow(parent, [ids])
+    HMI->>ILM: IVISurface(surfaceId) 등록
+  end
+  Note over SINK,ILM: 같은 surfaceId → 컴포지터가 하나의 surface로 묶음
+    </pre>
+    <div class="cap">video_manager_ccnc.cc createVideoWindow ~L65 · webappextension_delegate_impl.cc SetVideoSurfaceID ~L632 · web_contents_impl.cc video_surface_list_ · gstreamer_video_hole.cc SetVideoSurfaceId ~L27 · createSubWindow/connectSubWindow ~L129.</div>
+  </div>
+
+  <div class="note tip"><b>그래서 어떻게 "연결"되나?</b> Wayland IVI(ivi-shell)에서 surface는 전역 정수 <code>surface_id</code>로 식별됩니다. GStreamer sink에 <code>ivisurface-id=N</code>을 주면 그 sink가 채우는 버퍼가 <b>surface N</b>이 됩니다. 동시에 브라우저가 <code>ilm_surfaceSetDestinationRectangle(N, ...)</code>로 <b>surface N</b>의 화면 위치를 정합니다. 같은 N이라서 컴포지터가 "GStreamer가 그린 그 버퍼"를 "브라우저가 정한 그 사각형"에 올립니다. 둘은 서로를 몰라도 됩니다 — N만 같으면 됩니다.</div>
+
+  <h3>비디오가 "그려지기 시작"하는 순간 (첫 프레임 trigger)</h3>
+  <p>surface_id를 sink에 박고 rect도 정했어도, <b>언제 첫 프레임을 띄울지</b> 신호가 필요합니다. GStreamer가 <b>READY→PAUSED</b>(preroll = 첫 프레임 디코드 완료)에 도달하면 <code>OnVideoSurfaceCreated</code>가 발화되어 위치를 확정하고 surface를 보이게 합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant GST as GStreamer bus
+  participant GR as GStreamerRendererImpl
+  participant WMP as WebMediaPlayerImpl
+  participant WC as Browser / VideoManager
+  participant ILM as Wayland ILM
+  GST->>GR: STATE_CHANGED READY→PAUSED (preroll 완료)
+  GR->>GR: SetGstVideoRect() · surfaceId #gt; 0 확인
+  alt surfaceId 준비됨
+    GR->>WMP: client->OnVideoSurfaceCreated(surfaceId, w, h)
+    WMP->>WC: VideoSurfaceCreated + SetVideoRect(rect)
+    WC->>ILM: createSubWindow + dest rect + visibility ON
+    Note over ILM: gst가 채운 surface 버퍼가 rect 에 표시 = 첫 프레임 ✅
+  else surfaceId == 0 (아직 미발급)
+    GR->>GR: SetDelayedVideoSurfaceCreated() — 나중에 id 오면 발화
+  end
+    </pre>
+    <div class="cap">gstreamer_renderer_impl.cc STATE_CHANGED 핸들러 ~L1271 · OnVideoSurfaceCreated ~L1437 · web_media_player_impl.cc OnVideoSurfaceCreated ~L2723. NVIDIA는 PLAYING/해상도확정 시점에 발화하기도 함.</div>
+  </div>
+  <div class="note bug"><b>검은 화면의 전형:</b> 첫 still image가 검은색이면 보통 이 trigger가 안 불린 것입니다. ① surface_id가 0이라 <code>SetDelayedVideoSurfaceCreated</code>로 빠졌거나, ② PLAYING만 처리하고 PAUSED(preroll)에서 발화를 안 했거나, ③ <code>setVideoSurfaceID</code> 자체가 누락(섹션 01의 그 버그). 진단은 <code>SACH_2029</code> 로그의 <code>OnVideoSurfaceCreated surfaceId=… w=… h=…</code>를 확인.</div>
+
+  <h3>의문점 풀이 (FAQ)</h3>
+  <table>
+    <thead><tr><th>의문</th><th>답</th></tr></thead>
+    <tbody>
+      <tr><td><b>비디오 크기는 누가 정하나?</b></td><td>웹 페이지의 <b>CSS/레이아웃</b>이 1차. <code>VideoLayerImpl</code>이 그 bounds에 <code>DrawTransform</code>(transform/rotation/스크롤)을 곱해 <b>스크린 좌표 rect</b>를 만듭니다. (renderer compositor 스레드)</td></tr>
+      <tr><td><b>그 크기가 extension/browser까지 가나?</b></td><td>네. <code>VideoFrameCompositor → WebMediaPlayerImpl → delegate(mojo) → Browser WebContents → AudioClient → VideoManager</code> 까지 갑니다. browser·extension에서 최종 좌표 보정.</td></tr>
+      <tr><td><b>surface_id는 누가, 어디서 만드나?</b></td><td>extension <code>VideoManager::createVideoWindow()</code>가 <code>generateSurfaceId()</code>로 발급(uint64). 즉 <b>browser 측</b>에서 만듭니다.</td></tr>
+      <tr><td><b>그 id가 어떻게 Wayland surface가 되나?</b></td><td>같은 id가 <b>두 곳</b>에 set 됩니다 — ① GStreamer sink <code>ivisurface-id</code>(이 sink가 채우는 버퍼 = surface N), ② browser <code>ilm_surface*(N)</code>(surface N의 위치/크기/표시). 컴포지터가 N으로 동일 surface 인식.</td></tr>
+      <tr><td><b>GStreamer 픽셀과 browser 위치가 어떻게 합쳐지나?</b></td><td>둘은 직접 안 만납니다. <b>ivi-shell 컴포지터</b>가 <code>surface_id</code>를 키로, "GStreamer가 채운 버퍼"를 "browser가 <code>ilm_surfaceSetDestinationRectangle</code>로 정한 사각형"에 합성합니다.</td></tr>
+      <tr><td><b>좌표는 web 그대로 쓰나?</b></td><td>아니요. <code>updateVideoRect</code>에서 <b>앱 윈도우 offset + web layout offset</b>을 더하고, fullscreen이면 <b>aspect ratio 유지 + centering</b>을 합니다. 그 결과를 device/screen 좌표로 ILM에 전달.</td></tr>
+      <tr><td><b>언제 비디오가 보이기 시작하나?</b></td><td>GStreamer <b>READY→PAUSED(preroll 완료)</b> → <code>OnVideoSurfaceCreated</code> → <code>SetVideoRect</code>로 ILM dest rect 확정 + visibility ON → 첫 프레임 표시.</td></tr>
+      <tr><td><b>왜 트랙을 둘로 나눴나?</b></td><td><b>픽셀</b>(GStreamer→Wayland 직접, 고성능 오버레이)과 <b>제어/위치</b>(browser→ILM)가 다른 프로세스라서. <code>surface_id</code>가 유일한 공유 키이자 연결고리.</td></tr>
+    </tbody>
+  </table>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — 크기·서피스·Wayland <span class="cnt">10개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">cc/layers/video_layer_impl.cc</span> · <span class="sym">AppendQuads ~L126</span><span class="d">bounds×DrawTransform×transform_to_root_target → 스크린 rect → provider_client_impl_->UpdateVideoRect.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/media/video_frame_compositor.cc</span> · <span class="sym">UpdateVideoRect ~L209</span><span class="d">media_observer_client_(WMPI)로 rect 전달.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/media/web_media_player_impl.cc</span> · <span class="sym">SetVideoRect ~L2707, OnVideoSurfaceCreated ~L2723</span><span class="d">delegate->SetVideoRect(mojo). surface 생성 시 rect 재적용.</span></div>
+      <div class="ref"><span class="path">content/browser/web_contents/web_contents_impl.cc</span> · <span class="sym">SetVideoRect ~L13092, SetVideoSurfaceID / video_surface_list_</span><span class="d">ws client로 SetVideoOrder/SetVideoRect. surface_id 저장·GetVideoWindow 반환.</span></div>
+      <div class="ref"><span class="path">chrome/browser/obigo/webappextension_delegate_impl.cc</span> · <span class="sym">SetVideoSurfaceID ~L632</span><span class="d">(app_id,screen)로 WebContents 찾아 surface_id 전달.</span></div>
+      <div class="ref"><span class="path">obigo/extension/media/ccnc/video_manager_ccnc.cc</span> · <span class="sym">createVideoWindow ~L65, videoSurfaceCreated ~L129, updateVideoRect ~L259, updateVideoOrder ~L168</span><span class="d">surface_id 발급, subwindow 생성/연결, 좌표 보정(offset·fullscreen), z-order.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/feature/gstreamer_video_hole.cc</span> · <span class="sym">SetVideoSurfaceId ~L27, SetVideoRect ~L62</span><span class="d">g_object_set('ivisurface-id'/'surface-id', id). NVMEDIASINK/WAYLANDSINK만.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/gstreamer_renderer_impl.cc</span> · <span class="sym">OnMessageHandler STATE_CHANGED ~L1271, OnVideoSurfaceCreated ~L1437</span><span class="d">READY→PAUSED에서 첫 프레임 trigger. SetDelayedVideoSurfaceCreated.</span></div>
+      <div class="ref"><span class="path">obigo/port/hmi/*/Hmi.cc</span> · <span class="sym">createSubWindow, connectSubWindow, setSubWindowDestRectangle</span><span class="d">WebWindowService 경유로 IVI subwindow 생성·부모연결·위치설정.</span></div>
+      <div class="ref"><span class="path">ui/ozone/platform/wayland/host/obigo/ivi_surface.cc</span> · <span class="sym">OnConfigured ~L140</span><span class="d">ilm_surfaceSetVisibility / SetSourceRectangle / SetDestinationRectangle / commitChanges.</span></div>
+    </div>
+  </details>
+</section>
+
+<!-- ================= 12 CDM DEEP ================= -->
+<section id="cdm-deep">
+  <h2 class="sec">12 · CDM 복호화 심화</h2>
+  <p class="sec-sub">미디어가 DRM인지 어떻게 알고, key를 어떻게 얻고, 무엇을 복호화하며(=raw가 아니다), 그게 GStreamer까지 어떻게 가는가.</p>
+
+  <div class="hero">
+    <div class="lbl">가장 헷갈리는 한 가지</div>
+    <p><b>복호화(decrypt) ≠ 디코딩(decode).</b> Widevine(L3, 소프트웨어)은 <b>복호화만</b> 합니다. 그 결과는 <b>여전히 압축된 H.264/H.265(encoded)</b>이고, 이걸 GStreamer 디코더가 다시 raw(YUV)로 풉니다. CDM은 "암호만 푼다", GStreamer는 "압축을 푼다".</p>
+  </div>
+
+  <h3>① 미디어가 DRM인지 어떻게 파악하나</h3>
+  <p>컨테이너(MP4) 파싱 단계에서 <b>pssh box</b>와 트랙의 <b>encryption scheme</b>(cenc/cbcs)을 읽습니다. 그 정보가 <code>DecoderConfig.is_encrypted()</code>로 표시되고, init data가 있으면 blink이 JS로 <code>encrypted</code> 이벤트를 쏩니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  MP4["MP4 파서<br/>pssh box · 'cenc'/'cbcs'"]:::m --> CFG["VideoDecoderConfig<br/>is_encrypted() · encryption_scheme()"]:::m
+  CFG --> DB["DecoderBuffer<br/>decrypt_config (key_id · iv · subsamples)"]:::m
+  MP4 --> EV["HTMLMediaElementEncryptedMedia::Encrypted()<br/>init_data 로 'encrypted' 이벤트 발화"]:::r
+  EV --> JS["JS onencrypted → EME generateRequest()"]:::r
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+    </pre>
+    <div class="cap">box_definitions.h pssh ~L62 · audio/video_decoder_config.h is_encrypted · decrypt_config.h(key_id·iv·subsamples) · html_media_element_encrypted_media.cc Encrypted() ~L421.</div>
+  </div>
+
+  <h3>② CDM으로 key를 얻는 과정 (provisioning + license)</h3>
+  <p>최초 1회는 <b>provisioning</b>(디바이스 인증서 발급), 이후 콘텐츠마다 <b>license</b> 교환입니다. CDM은 샌드박스된 별도 프로세스에서 동작하고, 실제 서버 통신(POST)은 JS(앱)가 합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant JS as JS (EME)
+  participant CDM as Widevine CDM<br/>(sandbox proc)
+  participant PV as Provisioning Server
+  participant LS as License Server
+  Note over CDM: 최초 1회 provisioning
+  CDM->>PV: getProvisioningRequest() → 인증 요청
+  PV-->>CDM: 디바이스 인증서
+  CDM->>CDM: handleProvisioningResponse() → OnInitialized(true)
+  Note over JS,LS: 콘텐츠마다 license 교환
+  JS->>CDM: generateRequest(initData)
+  CDM->>CDM: createSession + generateRequest
+  CDM-->>JS: OnSessionMessage(license request)
+  JS->>LS: POST license request
+  LS-->>JS: license response
+  JS->>CDM: session.update(response)
+  CDM->>CDM: update() → key 설치
+  CDM-->>JS: OnSessionKeysChange(usable key)
+    </pre>
+    <div class="cap">plugin_for_widevine.cc — Initialize/OnProvisionResponse ~L159, CreateSessionAndGenerateRequest ~L225, OnSessionMessage ~L528, UpdateSession ~L323, OnSessionKeysChange ~L536. generateRequest/update는 5회 재시도(quota).</div>
+  </div>
+
+  <h3>③ key로 복호화 — 그 결과물의 정체</h3>
+  <p>key로 <code>Decryptor::Decrypt()</code>를 호출하면 <b>암호만 풀린</b> 버퍼가 나옵니다. <b>아직 압축된 H.264/H.265</b>입니다 (CENC는 subsample 단위로 암호 구간만 AES로 해제). raw 픽셀이 되려면 디코더를 또 거쳐야 합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+  E["① 암호화됨<br/>encrypted H.264<br/>(decrypt_config 有)"]:::c --> D["② 복호화됨·여전히 압축<br/>decrypted-but-ENCODED<br/>(Decryptor::Decrypt 출력)"]:::m
+  D --> R["③ raw 픽셀<br/>YUV420 프레임<br/>(GStreamer decodebin 출력)"]:::b
+  classDef c fill:#5f1e1e,stroke:#ef4444,color:#fff;
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef b fill:#1e5f33,stroke:#22c55e,color:#fff;
+    </pre>
+    <div class="cap"><b>3단계가 핵심:</b> ①→② = CDM(복호화), ②→③ = GStreamer 디코더(압축 해제). Widevine L3는 ②까지만 책임지는 <b>decrypt-only</b>.</div>
+  </div>
+  <table>
+    <thead><tr><th>구분</th><th>Decrypt (이 빌드 사용)</th><th>DecryptAndDecode (미사용)</th></tr></thead>
+    <tbody>
+      <tr><td>처리</td><td>AES-CTR/CBC 복호화만</td><td>복호화 + 디코딩</td></tr>
+      <tr><td>출력</td><td>encoded(압축) H.264/H.265</td><td>raw VideoFrame(YUV)</td></tr>
+      <tr><td>디코딩 주체</td><td><b>GStreamer decodebin</b></td><td>CDM 내부</td></tr>
+      <tr><td>이 빌드</td><td>✅ 사용</td><td><code>DecryptAndDecodeFrame</code>은 stub(kNoKey 반환)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>④ 복호화된 버퍼가 GStreamer까지 가는 길</h3>
+  <p>GStreamer 디코더가 demuxer에서 버퍼를 읽고, 암호화면 <code>Decryptor::Decrypt()</code>(샌드박스 CDM)로 보냅니다. 성공하면 <code>gst_app_src_push_buffer</code>로 <b>appsrc → decodebin</b>에 밀어넣어 디코딩됩니다. key가 아직 없으면 <code>WAIT_FOR_KEY</code>로 대기하다 key 도착 이벤트에 재시도합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant DX as DemuxerStream
+  participant GD as GStreamerMediaDecoder (media)
+  participant DEC as Decryptor (sandbox CDM)
+  participant SRC as gst appsrc
+  participant BIN as decodebin (HW/SW 디코더)
+  GD->>DX: Read() — encrypted DecoderBuffer
+  GD->>GD: OnRead() — is_encrypted 확인
+  GD->>DEC: Decrypt(stream_type, buffer)
+  alt kSuccess
+    DEC-->>GD: OnDecrypt(decrypted-but-encoded)
+    GD->>SRC: gst_app_src_push_buffer(GstBuffer)
+    SRC->>BIN: 압축 데이터 → 디코딩
+    BIN-->>BIN: raw YUV 프레임 → video sink
+  else kNoKey
+    DEC-->>GD: OnDecrypt(kNoKey) → WAIT_FOR_KEY
+    Note over GD: OnCdmEvent(kHasAdditionalUsableKey) 대기 후 재시도
+  end
+    </pre>
+    <div class="cap">gstreamer_media_decoder.cc — Initialize/InitializeVideoDecryptor ~L147, OnRead/OnReadWithDecrypt ~L455, OnDecrypt ~L476, PushBufferToGstreamer ~L533, OnCdmEvent ~L244. 버퍼는 gst_buffer_new_wrapped_full로 zero-copy 래핑.</div>
+  </div>
+
+  <div class="note info"><b>프로세스 정리:</b> EME API·세션 관리·복호버퍼 push는 <span class="badge b-r">Renderer(media task)</span>, 실제 Widevine 복호화는 <span class="badge b-c">샌드박스 CDM 프로세스</span>, 디코딩은 GStreamer(HW 디코더). 셋이 분리돼 있습니다.</div>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — CDM 복호화 <span class="cnt">7개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">media/formats/mp4/box_definitions.h</span> · <span class="sym">ProtectionSystemSpecificHeader ~L62</span><span class="d">pssh box 파싱(암호화 감지의 출발).</span></div>
+      <div class="ref"><span class="path">media/base/decrypt_config.h</span> · <span class="sym">DecryptConfig(key_id·iv·subsamples)</span><span class="d">버퍼별 복호화 메타. CENC subsample 구간.</span></div>
+      <div class="ref"><span class="path">blink/.../encryptedmedia/html_media_element_encrypted_media.cc</span> · <span class="sym">Encrypted() ~L421</span><span class="d">'encrypted' 이벤트 발화.</span></div>
+      <div class="ref"><span class="path">media/cdm/library_cdm/obigo_widevine_cdm/plugin_for_widevine.cc</span> · <span class="sym">CreateSessionAndGenerateRequest ~L225, UpdateSession ~L323, OnSessionKeysChange ~L536, Initialize(provisioning) ~L159</span><span class="d">세션·license·provisioning. 샌드박스 CDM 프로세스.</span></div>
+      <div class="ref"><span class="path">media/base/decryptor.h</span> · <span class="sym">Decrypt() ~L72, DecryptAndDecodeVideo() ~L128</span><span class="d">decrypt-only vs decrypt+decode 인터페이스.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/decoders/gstreamer_media_decoder.cc</span> · <span class="sym">OnReadWithDecrypt ~L467, OnDecrypt ~L476, PushBufferToGstreamer ~L533</span><span class="d">Decrypt 호출 → appsrc push. WAIT_FOR_KEY 처리.</span></div>
+      <div class="ref"><span class="path">media/cdm/library_cdm/obigo_widevine_cdm/plugin_for_widevine_wrapper.cc</span> · <span class="sym">decrypt() ~L340</span><span class="d">Widevine wrapper. MOTREX는 batch decrypt.</span></div>
+    </div>
+  </details>
+</section>
+
+<!-- ================= 13 VIDEO CONTROL ================= -->
+<section id="vcontrol">
+  <h2 class="sec">13 · 비디오 컨트롤 (수동 재생)</h2>
+  <p class="sec-sub">autoplay가 아닌 경우의 still image · play · pause · 10초 seek · teardown 상세 시퀀스.</p>
+
+  <div class="hero">
+    <div class="lbl">상태 한눈에</div>
+    <p>수동 재생은 보통 <b>still image(정지화면) → play → (pause/seek 반복) → teardown</b> 순으로 흐릅니다. 핵심은 "재생 전에도 첫 프레임(또는 poster)이 보인다"는 점과, 모든 컨트롤이 <b>renderer 메인 → media task → GStreamer</b> 3계층을 타고 내려간다는 점입니다.</p>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+stateDiagram-v2
+  [*] --> Loading: src 지정 · load()
+  Loading --> Preroll: 메타데이터 + 첫 프레임 디코드(PAUSED)
+  Preroll --> StillImage: poster 또는 첫 프레임 표시 (paused)
+  StillImage --> Playing: play()
+  Playing --> Paused: pause()
+  Paused --> Playing: play()
+  Playing --> Seeking: currentTime=10
+  Paused --> Seeking: currentTime=10
+  Seeking --> Playing: seeked (재생 중이었으면)
+  Seeking --> Paused: seeked (멈춰 있었으면)
+  Playing --> Teardown: 요소 제거·src 비움·이탈
+  Paused --> Teardown
+  Teardown --> [*]
+    </pre>
+    <div class="cap">수동 재생 비디오의 상태 전이. Preroll(PAUSED)에서 이미 still image가 보이는 게 포인트.</div>
+  </div>
+
+  <h3>① still image는 어떻게 표시되나</h3>
+  <p>두 경우입니다. <b>poster 속성이 있으면</b> 그 이미지를 ImageLoader가 로드해 표시하고, <b>없으면</b> preroll(첫 프레임 디코드)이 끝난 뒤 그 <b>첫 프레임</b>을 정지화면으로 보여줍니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  Q{"poster 속성 있나?"}:::r
+  Q -->|있음| P["HTMLVideoElement::ParseAttribute<br/>poster URL → ImageLoader 로드 → 표시"]:::r
+  Q -->|없음| F["GStreamer preroll(READY→PAUSED)<br/>첫 프레임 디코드"]:::m
+  F --> BUF["OnBufferingStateChange(HAVE_ENOUGH)<br/>readyState ≥ HAVE_CURRENT_DATA"]:::m
+  BUF --> SURF["OnVideoSurfaceCreated → 첫 프레임을 video hole 에 표시"]:::w
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef w fill:#5f3f1e,stroke:#f59e0b,color:#fff;
+    </pre>
+    <div class="cap">html_video_element.cc ParseAttribute/ImageSourceURL ~L215 · gstreamer_renderer_impl.cc OnBufferingStateChange ~L538, OnVideoSurfaceCreated ~L1437. play() 시 SetShowPosterFlag(false)로 poster 숨김(html_media_element.cc:3278).</div>
+  </div>
+
+  <h3>② play / ③ pause 상세 시퀀스</h3>
+  <p>둘 다 <code>UpdatePlayState</code>를 거쳐 <code>SetPlaybackRate</code>(play=배속, pause=0)로 GStreamer 상태를 PLAYING/PAUSED로 바꿉니다. pause는 <b>pause_reason</b>을 함께 내려보내 네이티브 stop 처리에 씁니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant JS as JS
+  participant HME as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant PI as PipelineImpl/RendererWrapper
+  participant GR as GStreamerRendererImpl
+  rect rgb(30,58,95)
+  Note over JS,GR: play()
+  JS->>HME: play() → PlayInternal() (paused_=false, showPoster=false)
+  HME->>HME: UpdatePlayState()
+  HME->>WMP: Play()
+  WMP->>PI: SetPlaybackRate(rate)
+  PI->>GR: SetPlaybackRate(rate) → PendingSetState(PLAYING)
+  end
+  rect rgb(59,30,95)
+  Note over JS,GR: pause()
+  JS->>HME: pause() → PauseInternal(pause_reason) (paused_=true)
+  HME->>HME: UpdatePlayState(pause_reason)
+  HME->>WMP: Pause(pause_reason)
+  WMP->>PI: SetPlaybackRate(0.0)
+  PI->>GR: SetPlaybackRate(0.0) → PendingSetState(PAUSED)
+  end
+    </pre>
+    <div class="cap">play: html_media_element.cc Play ~L3182 / PlayInternal ~L3247 · web_media_player_impl.cc Play ~L1070. pause: pause ~L3302 / PauseInternal ~L3324 · WMP::Pause ~L1111. 공통: gstreamer SetPlaybackRate ~L804 → PendingSetState ~L712.</div>
+  </div>
+
+  <h3>④ 10초 seek 상세 시퀀스</h3>
+  <p><code>currentTime=10</code>이면 <code>seeking</code> 이벤트를 쏘고 GStreamer에 <code>gst_element_seek</code>로 위치를 옮긴 뒤, 버퍼링이 차면 <code>seeked</code> 이벤트로 마무리합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant JS as JS
+  participant HME as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant PC as PipelineController
+  participant GR as GStreamerRendererImpl
+  JS->>HME: currentTime = 10
+  HME->>HME: Seek(10) — seeking_=true · 'seeking' 이벤트
+  HME->>WMP: Seek(10)
+  WMP->>WMP: DoSeek() — readyState→HAVE_METADATA
+  WMP->>PC: Seek(10)
+  PC->>GR: (media task) Seek(target)
+  GR->>GR: gst_element_seek(playbin, 10s) · 필요시 PendingSetState(PAUSED)
+  GR-->>WMP: OnBufferingStateChange(HAVE_ENOUGH)
+  WMP->>HME: FinishSeek() — seeking_=false · 'seeked' 이벤트
+    </pre>
+    <div class="cap">html_media_element.cc Seek ~L2725 / FinishSeek ~L2806 · web_media_player_impl.cc Seek/DoSeek ~L1178 · pipeline_controller.cc Seek ~L73 · gstreamer_renderer_impl.cc Seek ~L579.</div>
+  </div>
+
+  <h3>⑤ 비디오가 사라질 때 (teardown) 순서</h3>
+  <p>요소 제거·src 비움·페이지 이탈 시, 먼저 <b>pause</b>한 뒤 WebMediaPlayer를 파괴하고, 파이프라인을 Stop → GStreamer를 Release하며 sink·디코더를 해제하고 <b>Wayland surface_id를 0으로</b> 되돌려 subwindow를 정리합니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant HME as HTMLMediaElement
+  participant WMP as WebMediaPlayerImpl
+  participant PI as PipelineImpl
+  participant GR as GStreamerRendererImpl
+  participant WL as Wayland IVI
+  HME->>HME: RemovedFrom / ContextDestroyed
+  HME->>HME: PauseInternal(kRemovedFromDocument)
+  HME->>WMP: ClearMediaPlayer() → web_media_player_.reset()
+  WMP->>PI: PipelineController::Stop → Pipeline::Stop
+  PI->>GR: (media task) Release()
+  GR->>GR: GstElementSetState(PAUSED) → DestroyGstreamerPipeline()
+  GR->>GR: bus watch 제거 · sink/decoder DeInitialize · STATE_NULL · unref
+  GR->>WL: video sink DeInitialize → ivisurface-id = 0 (surface 제거)
+    </pre>
+    <div class="cap">html_media_element.cc RemovedFrom ~L948 / ContextDestroyed ~L4511 / ClearMediaPlayer ~L4477 · pipeline_controller.cc Stop ~L368 · gstreamer_renderer_impl.cc Release ~L223 / DestroyGstreamerPipeline ~L1049.</div>
+  </div>
+
+  <div class="note tip"><b>공통 패턴:</b> 모든 컨트롤은 <code>HTMLMediaElement</code>(renderer 메인) → <code>WebMediaPlayerImpl</code> → <code>Pipeline</code>(media task) → <code>GStreamerRendererImpl</code> 4계층을 탑니다. play/pause는 <code>SetPlaybackRate</code>, seek은 <code>gst_element_seek</code>, teardown은 <code>Release</code>로 끝납니다.</div>
+</section>
+
+<!-- ================= 14 AUDIO PATH ================= -->
+<section id="audiopath">
+  <h2 class="sec">14 · 오디오 경로 (출력 장치까지)</h2>
+  <p class="sec-sub">HTML element부터 실제 출력까지. MediaElement와 WebAudio는 끝이 완전히 다르다.</p>
+
+  <div class="hero">
+    <div class="lbl">중요한 반전</div>
+    <p><b>미디어 엘리먼트(audio/video) 소리는 ALSA/PulseAudio로 가지 않습니다.</b> GStreamer <code>haudiosink</code> → <code>stream-id</code> → 차량 오디오 HAL로 직행합니다. <b>오직 WebAudio만</b> 표준 경로(별도 <b>audio service 프로세스</b> → ALSA/Pulse)로 갑니다. (사용자가 떠올린 "audio process"는 <b>WebAudio 쪽에서 맞습니다.</b>)</p>
+  </div>
+
+  <h3>두 경로는 끝이 다르다</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+  subgraph ME["미디어 엘리먼트 (audio/video) 경로"]
+    M1["HTMLMediaElement"]:::r --> M2["RendererImpl<br/>(AudioRendererImpl 초기화는 되나 미사용)"]:::m
+    M2 --> M3["GStreamerRendererImpl<br/>audio decoder→audioconvert→audioresample(48k)→volume"]:::m
+    M3 --> M4["haudiosink (stream-id=122)"]:::m
+    M4 --> M5["차량 오디오 HAL (closed)"]:::w
+  end
+  subgraph WA["WebAudio 경로"]
+    W1["AudioContext → AudioDestination"]:::r --> W2["RendererWebAudioDeviceImpl<br/>→ AudioOutputDevice"]:::r
+    W2 --> W3["[IPC] Audio Service 프로세스<br/>믹싱·리샘플"]:::b
+    W3 --> W4["ALSA / PulseAudio"]:::b
+  end
+  classDef r fill:#1e3a5f,stroke:#3b82f6,color:#fff;
+  classDef m fill:#3b1e5f,stroke:#a855f7,color:#fff;
+  classDef b fill:#1e5f33,stroke:#22c55e,color:#fff;
+  classDef w fill:#5f3f1e,stroke:#f59e0b,color:#fff;
+    </pre>
+    <div class="cap"><span class="badge b-m">Media(GStreamer)</span> 엘리먼트 오디오는 renderer 안 GStreamer가 전담 → 차량 HAL. <span class="badge b-b">Audio Service</span> WebAudio만 별도 프로세스 거쳐 ALSA/Pulse.</div>
+  </div>
+
+  <h3>경로 1 — 미디어 엘리먼트 오디오</h3>
+  <p><code>obigo_use_gstreamer_render=true</code>라 <code>RendererImplFactory</code>가 <code>GStreamerRendererImpl</code>을 주입합니다. <code>AudioRendererImpl</code>도 생성·초기화되지만 Flush/재생은 GStreamer가 전담해 <b>실질적으로 미사용</b>입니다. 오디오는 GStreamer 파이프라인에서 디코딩·리샘플(48kHz)된 뒤 <code>haudiosink</code>의 <code>stream-id</code>로 차량 오디오 시스템에 라우팅됩니다. (그 아래 HAL은 closed)</p>
+  <div class="note info"><b>processor(누가 샘플을 처리하나)?</b> 이 경로에선 <b>GStreamer 스레드</b>가 디코딩·<code>audioconvert</code>·<code>audioresample(48kHz)</code>·<code>volume</code>을 처리합니다. 단 이 GStreamer는 renderer가 아니라 <b>별도 Media Service 프로세스</b>에서 돕니다(<code>obigo_use_media_service=true</code>, 섹션 15 참조). Chromium <b>Audio Service</b> 프로세스(ALSA)는 이 경로를 거치지 않습니다 — 그건 WebAudio 전용입니다.</div>
+
+  <h3>경로 2 — WebAudio (여기서 audio service 프로세스가 등장)</h3>
+  <p>WebAudio 그래프 출력은 <code>AudioDestination</code> → <code>RendererWebAudioDeviceImpl</code> → <code>AudioOutputDevice</code>로 가고, 여기서 <b>IPC로 별도 audio service 프로세스</b>에 넘어가 믹싱·리샘플 후 ALSA/PulseAudio로 나갑니다. 사용자가 예상한 "audio process"가 바로 이 audio service입니다.</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant CTX as AudioContext (blink main)
+  participant AD as AudioDestination (audio thread)
+  participant DEV as AudioOutputDevice (IO thread)
+  participant AS as Audio Service 프로세스
+  participant DRV as ALSA / PulseAudio
+  CTX->>AD: 그래프 렌더 (128 샘플/quantum, pull)
+  AD->>DEV: Render() 콜백으로 샘플 전달
+  DEV->>AS: [mojo IPC] CreateStream · 샘플 스트림
+  AS->>AS: 믹싱 · 리샘플
+  AS->>DRV: 출력
+    </pre>
+    <div class="cap">audio_destination.cc CreateAudioDevice ~L399 · renderer_webaudiodevice_impl.cc CreateAudioRendererSink ~L445 · audio_device_factory.cc NewOutputDevice ~L57 · audio_output_device.cc Start ~L113.</div>
+  </div>
+
+  <h3>두 경로 비교</h3>
+  <table>
+    <thead><tr><th>항목</th><th>미디어 엘리먼트</th><th>WebAudio</th></tr></thead>
+    <tbody>
+      <tr><td>진입점</td><td>audio/video 요소</td><td>AudioContext</td></tr>
+      <tr><td>디코딩</td><td>GStreamer (HW/SW 디코더)</td><td>없음(앱이 만든 샘플)</td></tr>
+      <tr><td>샘플 처리(processor)</td><td>GStreamer 스레드 (Media Service 프로세스)</td><td>Audio Service 프로세스</td></tr>
+      <tr><td>리샘플</td><td>audioresample 48kHz 고정</td><td>audio service 리샘플러</td></tr>
+      <tr><td>최종 sink</td><td><b>haudiosink → 차량 HAL</b></td><td><b>AudioOutputDevice → ALSA</b></td></tr>
+      <tr><td>거치는 프로세스</td><td>Renderer → <b>Media Service</b> → 차량 HAL</td><td>Renderer → <b>Audio Service</b> → ALSA</td></tr>
+      <tr><td>stream-id</td><td>사용(122=WEBAPP_STREAMING)</td><td>미사용</td></tr>
+    </tbody>
+  </table>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — 오디오 경로 <span class="cnt">7개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">out_mobis-ccnc/Release/args.gn</span> · <span class="sym">obigo_use_gstreamer_render = true ~L91</span><span class="d">이 빌드가 GStreamer 렌더러를 쓴다는 결정적 근거.</span></div>
+      <div class="ref"><span class="path">media/renderers/renderer_impl_factory.cc</span> · <span class="sym">CreateRenderer ~L160</span><span class="d">GStreamerRendererImpl 주입(audio도 GStreamer가).</span></div>
+      <div class="ref"><span class="path">media/renderers/renderer_impl.cc</span> · <span class="sym">Initialize ~L233, Flush ~L725 (OBIGO_USE_NATIVE_RENDER)</span><span class="d">AudioRendererImpl 초기화되나 Flush는 nm_renderer_만 → 실질 미사용.</span></div>
+      <div class="ref"><span class="path">media/renderers/obigo/gstreamer/sink/audio/haudiosink.cc</span> · <span class="sym">AddDefaultAudioSink ~L129, SwitchToActualAudioSinkImpl ~L31</span><span class="d">audioconvert→resample48k→volume→haudiosink(stream-id). 차량 HAL.</span></div>
+      <div class="ref"><span class="path">blink/.../platform/audio/audio_destination.cc</span> · <span class="sym">CreateAudioDevice ~L399</span><span class="d">WebAudio 출력 장치 생성.</span></div>
+      <div class="ref"><span class="path">content/renderer/media/renderer_webaudiodevice_impl.cc</span> · <span class="sym">CreateAudioRendererSink ~L445</span><span class="d">AudioOutputDevice 연결.</span></div>
+      <div class="ref"><span class="path">media/audio/audio_output_device.cc</span> · <span class="sym">Start ~L113</span><span class="d">IO 스레드에서 audio service로 IPC 스트림 생성.</span></div>
+    </div>
+  </details>
+</section>
+
+<!-- ================= 15 PROCESS MAP ================= -->
+<section id="procmap">
+  <h2 class="sec">15 · 프로세스 지도 · Audio/Media Service</h2>
+  <p class="sec-sub">이 빌드는 미디어를 renderer가 아니라 여러 별도 프로세스로 분리한다. Audio Service가 어떻게 떠서 무엇에 쓰이는지.</p>
+
+  <div class="hero">
+    <div class="lbl">핵심</div>
+    <p>이 빌드(<code>obigo_use_media_service=true</code>, <code>mojo_media_host="utility"</code>)는 <b>미디어 렌더러(GStreamer)를 별도 "Media Service" utility 프로세스</b>에서 돌립니다. 그리고 <b>"Audio Service"는 그것과 다른 별도 프로세스</b>로, <b>WebAudio·시스템 오디오·마이크</b>를 ALSA로 처리합니다. 즉 <b>"미디어 엘리먼트 오디오"와 "WebAudio"는 서로 다른 프로세스</b>를 씁니다.</p>
+  </div>
+
+  <h3>전체 프로세스 지도</h3>
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TB
+  subgraph BR["🟩 Browser 프로세스"]
+    ORCH["오케스트레이션<br/>GetMediaService() · GetAudioService()<br/>ServiceProcessHost::Launch"]
+  end
+  subgraph RN["🟦 Renderer 프로세스"]
+    HME["HTMLMediaElement · WebMediaPlayerImpl<br/>pipeline → MojoRenderer(클라이언트)"]
+    WACTX["AudioContext · AudioDestination<br/>→ AudioOutputDevice(클라이언트)"]
+  end
+  subgraph MS["🟪 Media Service 프로세스 (utility)"]
+    MRS["MojoRendererService → RendererImpl<br/>→ GStreamerRendererImpl"]
+    GV["GStreamer: 비디오 디코드 → hvideosink"]
+    GA["GStreamer: 오디오 디코드 → haudiosink(stream-id)"]
+    MRS --> GV
+    MRS --> GA
+  end
+  subgraph AS["🟩 Audio Service 프로세스 (utility, sandbox=kAudio)"]
+    AM["AudioManager(ALSA) · StreamFactory<br/>믹싱 · 디바이스 · 마이크"]
+  end
+  subgraph CD["🟥 CDM 프로세스 (utility)"]
+    WV["Widevine 복호화"]
+  end
+  subgraph GP["🟧 GPU 프로세스"]
+    VIZ["viz 합성 · video hole punch"]
+  end
+  HME == "mojo: renderer" ==> MRS
+  WACTX == "mojo: audio stream" ==> AM
+  GV --> WL["Wayland IVI / 디스플레이"]
+  GA --> HAL["차량 오디오 HAL (closed)"]
+  AM --> ALSA["ALSA → 커널 → 하드웨어"]
+  MRS -. "복호화 필요시 mojo" .-> WV
+  classDef x fill:#1c232c,stroke:#6e7781,color:#e6edf3;
+    </pre>
+    <div class="cap"><b>미디어 엘리먼트</b>(video+audio)는 Media Service에서 GStreamer로. <b>WebAudio</b>는 Audio Service에서 ALSA로. 둘은 다른 프로세스·다른 sink.</div>
+  </div>
+
+  <h3>Audio Service는 어떻게 생성되나</h3>
+  <p>브라우저가 <b>첫 오디오 스트림이 필요할 때 지연 생성</b>합니다. <code>GetAudioService()</code> → <code>LaunchAudioService()</code> → out-of-process 조건이면 <code>ServiceProcessHost::Launch</code>로 <b>"Audio Service" utility 프로세스</b>를 띄웁니다(샌드박스 <code>kAudio</code>).</p>
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant RN as Renderer (AudioOutputDevice)
+  participant BR as Browser (UI thread)
+  participant SPH as ServiceProcessHost
+  participant AS as Audio Service 프로세스
+  RN->>BR: 오디오 스트림 요청 (AudioOutputIPC)
+  BR->>BR: GetAudioService() (SequenceLocalStorage, lazy)
+  BR->>BR: LaunchAudioService() — IsAudioServiceOutOfProcess()?
+  alt out-of-process (이 빌드)
+    BR->>SPH: Launch("Audio Service", sandbox=kAudio)
+    SPH-->>AS: 프로세스 기동 · audio::Service 시작
+  end
+  BR->>AS: [mojo] StreamFactory 연결
+  RN->>AS: 샘플 스트림 (AudioOutputDevice → StreamFactory)
+  AS->>AS: AudioManager(ALSA) · 믹싱
+  AS->>AS: ALSA → 커널 → 하드웨어
+    </pre>
+    <div class="cap">content/browser/audio/audio_service.cc — GetAudioService ~L28, LaunchAudioService ~L144, LaunchAudioServiceOutOfProcess ~L114. services/audio/service.cc audio::Service ~L38. media/audio/alsa/audio_manager_alsa.cc.</div>
+  </div>
+
+  <h3>Audio Service의 용도</h3>
+  <ul>
+    <li><b>출력 스트림</b>: WebAudio(AudioOutputDevice)와 Chromium 표준 오디오 출력을 받아 ALSA로 재생.</li>
+    <li><b>AudioManager(ALSA 백엔드)</b>: <code>use_alsa=true</code>. 디바이스 열거, 스트림 생성/소멸, 커널 ALSA와 직접 통신.</li>
+    <li><b>믹싱</b>: OutputDeviceMixer로 여러 스트림 합성.</li>
+    <li><b>입력</b>: 마이크 캡처 스트림. (그리고 AEC/loopback — 빌드 플래그 조건부)</li>
+    <li><b>디바이스 모니터</b>: 장치 연결/해제 통지.</li>
+  </ul>
+  <div class="note warn"><b>흔한 오해 정정:</b> 미디어 엘리먼트(audio/video)의 소리는 <b>Audio Service를 거치지 않습니다.</b> 그건 Media Service 프로세스의 GStreamer <code>haudiosink</code>가 <code>stream-id</code>로 차량 HAL에 직접 보냅니다. Audio Service(ALSA)는 <b>WebAudio·시스템 사운드·마이크</b> 용입니다.</div>
+
+  <h3>Media Service vs Audio Service</h3>
+  <table>
+    <thead><tr><th>구분</th><th>Media Service</th><th>Audio Service</th></tr></thead>
+    <tbody>
+      <tr><td>프로세스 타입</td><td>utility</td><td>utility (sandbox kAudio)</td></tr>
+      <tr><td>호스트하는 것</td><td>MojoRendererService → GStreamerRendererImpl (비디오·오디오 디코딩)</td><td>AudioManager(ALSA) · StreamFactory</td></tr>
+      <tr><td>생성 트리거</td><td><code>GetMediaService()</code> lazy (미디어 재생 시)</td><td><code>GetAudioService()</code> lazy (첫 스트림 시)</td></tr>
+      <tr><td>띄우는 코드</td><td>media_service.cc <code>ServiceProcessHost::Launch("Media Service")</code></td><td>audio_service.cc <code>LaunchAudioServiceOutOfProcess</code></td></tr>
+      <tr><td>출력 대상</td><td>비디오→Wayland IVI · 오디오→차량 HAL(haudiosink)</td><td>ALSA → 커널 → 하드웨어</td></tr>
+      <tr><td>누가 쓰나</td><td>모든 &lt;video&gt;/&lt;audio&gt; 엘리먼트</td><td>WebAudio · 시스템 오디오 · 마이크</td></tr>
+      <tr><td>빌드 근거</td><td><code>obigo_use_media_service=true</code> · <code>mojo_media_host=utility</code></td><td><code>use_alsa=true</code> · kAudioServiceOutOfProcess</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note tip"><b>앞 섹션 보정:</b> 섹션 1·2·10·11에서 "media task runner"로 표기한 GStreamer 동작은 <b>Media Service 프로세스</b> 안에서 일어납니다(renderer의 media task runner는 MojoRenderer 클라이언트까지). 프로세스 경계는 <code>MojoRenderer</code>의 mojo IPC입니다.</div>
+
+  <details class="code">
+    <summary>📂 코드 레퍼런스 — 프로세스 토폴로지 <span class="cnt">8개 앵커</span></summary>
+    <div class="body">
+      <div class="ref"><span class="path">out_mobis-ccnc/Release/args.gn</span> · <span class="sym">obigo_use_media_service=true · use_alsa=true · use_pulseaudio=false</span><span class="d">미디어=별도 프로세스, 오디오 백엔드=ALSA.</span></div>
+      <div class="ref"><span class="path">media/media_options.gni</span> · <span class="sym">~L316 obigo_use_media_service → renderer 서비스 + mojo_media_host="utility"</span><span class="d">미디어 렌더러를 utility 프로세스에서 호스트.</span></div>
+      <div class="ref"><span class="path">content/browser/media/media_service.cc</span> · <span class="sym">GetMediaService ~L27, ServiceProcessHost::Launch("Media Service") ~L55</span><span class="d">Media Service utility 프로세스 기동.</span></div>
+      <div class="ref"><span class="path">content/renderer/media/media_interface_factory.cc</span> · <span class="sym">CreateDefaultRendererForMediaService ~L110</span><span class="d">renderer가 Media Service로 렌더러 생성 요청(OBIGO_USE_MEDIA_SERVICE).</span></div>
+      <div class="ref"><span class="path">media/mojo/services/interface_factory_impl.cc</span> · <span class="sym">CreateDefaultRendererForMediaService ~L458</span><span class="d">Media Service 측 렌더러 생성 → RendererImpl/GStreamerRendererImpl.</span></div>
+      <div class="ref"><span class="path">content/browser/audio/audio_service.cc</span> · <span class="sym">GetAudioService ~L28, LaunchAudioService ~L144, LaunchAudioServiceOutOfProcess ~L114</span><span class="d">Audio Service utility 프로세스 lazy 기동.</span></div>
+      <div class="ref"><span class="path">services/audio/service.cc</span> · <span class="sym">audio::Service ~L38</span><span class="d">AudioManager·StreamFactory·디바이스 모니터 보유.</span></div>
+      <div class="ref"><span class="path">media/audio/alsa/audio_manager_alsa.cc</span><span class="d">ALSA 백엔드 — 커널 오디오 드라이버와 직접 통신.</span></div>
+    </div>
+  </details>
+</section>
+
+<!-- ================= 06 REFERENCES ================= -->
+<section id="refs">
+  <h2 class="sec">06 · 참고 자료 · 외부 그림</h2>
+  <p class="sec-sub">표준 스펙·Chromium 공식 문서·차량 그래픽 스택 자료. 더 깊이 파고들 때의 1차 출처.</p>
+
+  <h3>Chromium 공식 미디어 파이프라인</h3>
+  <div class="diagram">
+    <img src="./lib/img/chromium-media-pipeline.png" alt="Chromium media stack" style="max-width:680px;width:100%;background:#fff;border-radius:8px;padding:14px">
+    <div class="cap">출처: <a href="https://www.chromium.org/developers/design-documents/video/" target="_blank">Chromium — Audio/Video Playback</a>. 우리 스택은 이 그림의 renderer 자리에 GStreamer를 끼운 형태입니다.</div>
+  </div>
+
+  <h3>표준 스펙 (1차 출처)</h3>
+  <table>
+    <thead><tr><th>주제</th><th>자료</th><th>왜 보는가</th></tr></thead>
+    <tbody>
+      <tr><td>WebAudio</td><td><a href="https://www.w3.org/TR/webaudio/" target="_blank">W3C Web Audio API</a></td><td>AudioNode 그래프·렌더 quantum·destination 개념</td></tr>
+      <tr><td>EME/CDM</td><td><a href="https://www.w3.org/TR/encrypted-media/" target="_blank">W3C Encrypted Media Extensions</a></td><td>requestMediaKeySystemAccess·session 흐름의 표준 정의</td></tr>
+      <tr><td>MSE</td><td><a href="https://www.w3.org/TR/media-source/" target="_blank">W3C Media Source Extensions</a></td><td>isTypeSupported·SourceBuffer (해상도 상한 검사와 연결)</td></tr>
+      <tr><td>HTMLMediaElement</td><td><a href="https://html.spec.whatwg.org/multipage/media.html" target="_blank">WHATWG HTML — media</a></td><td>play()·readyState·이벤트 상태머신의 규범</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Chromium 내부 구조</h3>
+  <table>
+    <thead><tr><th>자료</th><th>왜 보는가</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://chromium.googlesource.com/chromium/src/+/HEAD/media/README.md" target="_blank">//media README</a></td><td>Pipeline·Demuxer·Decoder·Renderer 컴포넌트 지도(1차)</td></tr>
+      <tr><td><a href="https://developer.chrome.com/docs/chromium/videong" target="_blank">VideoNG deep-dive</a></td><td>blink→WebMediaPlayerImpl→pipeline 최신 경로</td></tr>
+      <tr><td><a href="https://developer.chrome.com/docs/chromium/renderingng-architecture" target="_blank">RenderingNG</a></td><td>renderer/gpu/viz 합성 구조(video hole 이해 배경)</td></tr>
+      <tr><td><a href="https://www.chromium.org/developers/design-documents/video/" target="_blank">Audio/Video Playback design doc</a></td><td>미디어 스택 개요 다이어그램(위 그림 출처)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>GStreamer · 차량 그래픽 스택</h3>
+  <table>
+    <thead><tr><th>자료</th><th>왜 보는가</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://gstreamer.freedesktop.org/documentation/application-development/introduction/basics.html" target="_blank">GStreamer 기초 (element·pad·bin·bus)</a></td><td>appsrc·decodebin·sink·bus 메시지 모델(섹션 01/02 배경)</td></tr>
+      <tr><td><a href="https://gstreamer.freedesktop.org/documentation/additional/design/index.html" target="_blank">GStreamer 설계 문서</a></td><td>상태 전이(NULL→READY→PAUSED→PLAYING) preroll 개념</td></tr>
+      <tr><td><a href="https://wayland.freedesktop.org/architecture.html" target="_blank">Wayland 아키텍처</a></td><td>compositor·surface·subsurface (video hole/IVI 배경)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>이 저장소의 관련 분석 문서</h3>
+  <p>같은 미디어 스택을 다룬 작업 기록 (<code>docs/</code>):</p>
+  <ul>
+    <li><code>docs/20260311_video_pipeline_gwur51.md</code> — 143 미디어 파이프라인 전면 복원</li>
+    <li><code>docs/20260428_audio_manager_unification_gwur74.md</code> · <code>docs/audio_debug/*</code> — 오디오 가드 통합 + 9-hop 복원</li>
+    <li><code>docs/video_hole/*</code> — Video Hole native 마이그레이션(GWUR-87, 보류)</li>
+    <li><code>docs/features/20260529_gstreamer_chrome_integration.md</code> — GStreamer↔Chromium 연동 레퍼런스</li>
+    <li><code>docs/features/20260611_GetMaxLevelForCodec_resolution_cap.md</code> — MSE 해상도 상한(GMCP-2007)</li>
+    <li><code>docs/20260402_video_drm_gwur71.md</code> — Widevine CDM 활성화</li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<footer style="max-width:1040px;margin:0 auto;padding:0 50px 60px">
+  생성: /office-hours 후속 · 소스: brs_143 (Chromium 143.0.7499.192) · 다이어그램 Mermaid · 줄번호는 앵커(심볼명으로 검색 권장)
+</footer>
+
+<script src="./lib/mermaid.min.js"></script>
+<script src="./lib/highlight.min.js"></script>
+<script>
+// ---- mermaid theme (re-renderable) ----
+var DARK = {
+  theme:'base',
+  themeVariables:{
+    darkMode:true, background:'#161b22',
+    primaryColor:'#1c232c', primaryTextColor:'#e6edf3', primaryBorderColor:'#3b82f6',
+    lineColor:'#6e7781', secondaryColor:'#1e3a5f', tertiaryColor:'#11161d',
+    fontFamily:"-apple-system,Segoe UI,sans-serif", fontSize:'14px',
+    actorBkg:'#1e3a5f', actorBorder:'#3b82f6', actorTextColor:'#e6edf3',
+    signalColor:'#9da7b3', signalTextColor:'#e6edf3', noteBkgColor:'#5f3f1e', noteTextColor:'#fff', noteBorderColor:'#f59e0b',
+    pie1:'#3b82f6',pie2:'#a855f7',pie3:'#22c55e',pie4:'#f59e0b',pie5:'#ef4444',pie6:'#6e7781'
+  },
+  flowchart:{curve:'basis',htmlLabels:true},
+  sequence:{useMaxWidth:true,wrap:true},
+  securityLevel:'loose'
+};
+var LIGHT = JSON.parse(JSON.stringify(DARK));
+LIGHT.theme='neutral';
+LIGHT.themeVariables={fontFamily:"-apple-system,Segoe UI,sans-serif",fontSize:'14px'};
+
+function renderMermaid(){
+  var isLight=document.body.classList.contains('light');
+  mermaid.initialize(Object.assign({startOnLoad:false}, isLight?LIGHT:DARK));
+  document.querySelectorAll('.mermaid').forEach(function(el){
+    if(!el.dataset.src) el.dataset.src=el.textContent;
+    el.removeAttribute('data-processed');
+    el.innerHTML=el.dataset.src;
+  });
+  mermaid.run({querySelector:'.mermaid'});
+}
+renderMermaid();
+hljs.highlightAll();
+
+// ---- theme toggle ----
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  localStorage.setItem('mg-theme', document.body.classList.contains('light')?'light':'dark');
+  renderMermaid();
+}
+if(localStorage.getItem('mg-theme')==='light'){document.body.classList.add('light');renderMermaid();}
+
+// ---- nav: show one section + scroll spy ----
+var links=[].slice.call(document.querySelectorAll('nav.side a'));
+function activate(id){
+  links.forEach(function(a){a.classList.toggle('active', a.dataset.s===id);});
+}
+window.addEventListener('scroll',function(){
+  var secs=[].slice.call(document.querySelectorAll('section'));
+  var y=window.scrollY+90, cur=secs[0];
+  secs.forEach(function(s){ if(s.offsetTop<=y) cur=s; });
+  if(cur) activate(cur.id);
+});
+
+// ---- sidebar filter ----
+function filterNav(q){
+  q=q.toLowerCase();
+  links.forEach(function(a){
+    a.style.display = a.textContent.toLowerCase().indexOf(q)>=0?'block':'none';
+  });
+}
+</script>
+</body>
+</html>
