@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>video-hole multi test</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #101014; color: #e0e0e0; font: 14px/1.4 sans-serif; }
+  /* 스크롤 가능하도록 컨텐츠를 뷰포트보다 크게. 두 영상이 동시에 걸치는 구간이 생김. */
+  .pad { height: 40vh; display: flex; align-items: center; justify-content: center;
+         color: #666; font-size: 18px; letter-spacing: 2px; }
+  .card {
+    width: 100%;
+    height: 78vh;              /* 큰 영상. 2개 스택 -> 총 156vh -> 스크롤 발생, 중간엔 둘 다 보임 */
+    position: relative;
+    background: #000;
+    overflow: hidden;          /* 카드 밖으로 영상이 안 넘치도록(비디오홀 클립 테스트) */
+    border-radius: 12px;
+  }
+  .card + .card { margin-top: 24px; }
+  .card video {
+    width: 100%; height: 100%;
+    object-fit: cover;         /* 큰 영상 채우기 */
+    display: block;
+  }
+  .tag {
+    position: absolute; left: 14px; top: 12px; z-index: 2;
+    background: rgba(0,0,0,.55); padding: 6px 12px; border-radius: 8px;
+    font-weight: 700; font-size: 16px;
+  }
+  .rt {  /* 재생 확인용 currentTime (영상 위 오버레이 아님, 카드 밖 하단) */
+    padding: 6px 14px; color: #7cf; font-variant-numeric: tabular-nums;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="pad">▼ 스크롤해서 두 영상이 동시에 보이게 하세요 ▼</div>
+
+  <div class="card">
+    <span class="tag">VIDEO 1 (Big Buck Bunny)</span>
+    <video id="v1" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
+      <source src="https://media.w3.org/2010/05/bunny/trailer.mp4" type="video/mp4">
+      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="rt" id="rt1">v1: --</div>
+
+  <div class="card">
+    <span class="tag">VIDEO 2 (Sintel)</span>
+    <video id="v2" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
+      <source src="https://media.w3.org/2010/05/sintel/trailer.mp4" type="video/mp4">
+      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="rt" id="rt2">v2: --</div>
+
+  <div class="pad">▲ 위로 스크롤 ▲</div>
+</div>
+
+<script>
+// 자동재생 보장(muted 라 정책상 허용) + 재생 확인용 currentTime 표시.
+// currentTime 이 흐르면 디코딩 재생 중, 화면 갱신 여부는 눈/녹화로 확인.
+function hook(id, rtId) {
+  var v = document.getElementById(id), rt = document.getElementById(rtId);
+  var p = v.play(); if (p && p.catch) p.catch(function(){ /* 재시도는 사용자 탭 */ });
+  setInterval(function(){
+    rt.textContent = id + ': t=' + v.currentTime.toFixed(2) +
+      '  ' + (v.paused ? '[PAUSED]' : '[playing]') +
+      '  rs=' + v.readyState + '  ' + v.videoWidth + 'x' + v.videoHeight;
+  }, 500);
+}
+hook('v1', 'rt1');
+hook('v2', 'rt2');
+</script>
+</body>
+</html>
