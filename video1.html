@@ -3,77 +3,82 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>video-hole multi test</title>
+<title>video-hole multi test (center scroll + fixed mini)</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { background: #101014; color: #e0e0e0; font: 14px/1.4 sans-serif; }
-  /* 스크롤 가능하도록 컨텐츠를 뷰포트보다 크게. 두 영상이 동시에 걸치는 구간이 생김. */
   .pad { height: 40vh; display: flex; align-items: center; justify-content: center;
          color: #666; font-size: 18px; letter-spacing: 2px; }
+  /* 가운데: 스크롤되는 큰 영상 2개 (v1, v2) */
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
   .card {
-    width: 100%;
-    height: 78vh;              /* 큰 영상. 2개 스택 -> 총 156vh -> 스크롤 발생, 중간엔 둘 다 보임 */
-    position: relative;
-    background: #000;
-    overflow: hidden;          /* 카드 밖으로 영상이 안 넘치도록(비디오홀 클립 테스트) */
-    border-radius: 12px;
+    width: 100%; height: 78vh; position: relative; background: #000;
+    overflow: hidden; border-radius: 12px;
   }
   .card + .card { margin-top: 24px; }
-  .card video {
-    width: 100%; height: 100%;
-    object-fit: cover;         /* 큰 영상 채우기 */
-    display: block;
-  }
+  .card video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .tag {
     position: absolute; left: 14px; top: 12px; z-index: 2;
     background: rgba(0,0,0,.55); padding: 6px 12px; border-radius: 8px;
     font-weight: 700; font-size: 16px;
   }
-  .rt {  /* 재생 확인용 currentTime (영상 위 오버레이 아님, 카드 밖 하단) */
-    padding: 6px 14px; color: #7cf; font-variant-numeric: tabular-nums;
+  .rt { padding: 6px 14px; color: #7cf; font-variant-numeric: tabular-nums; }
+  /* 오른쪽: 스크롤해도 안 움직여야 하는 fixed 미니 플레이어 (v3) */
+  #mini {
+    position: fixed; right: 20px; bottom: 20px; z-index: 100;
+    width: 360px; height: 202px; background: #000;
+    border: 2px solid #2af; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,.6);
   }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  #mini video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #mini .tag { top: 8px; left: 8px; font-size: 13px; }
+  #miniRt { position: fixed; right: 20px; bottom: 4px; z-index: 100;
+            color: #2af; font-size: 12px; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="pad">▼ 스크롤해서 두 영상이 동시에 보이게 하세요 ▼</div>
+  <div class="pad">▼ 스크롤: 가운데 영상만 움직이고, 오른쪽 미니는 고정이어야 함 ▼</div>
 
   <div class="card">
-    <span class="tag">VIDEO 1 (Big Buck Bunny)</span>
-    <video id="v1" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
-      <source src="https://media.w3.org/2010/05/bunny/trailer.mp4" type="video/mp4">
-      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
-    </video>
+    <span class="tag">CENTER 1 (bunny)</span>
+    <video id="v1" autoplay muted loop playsinline preload="auto" crossorigin="anonymous"
+           src="https://media.w3.org/2010/05/bunny/trailer.mp4"></video>
   </div>
   <div class="rt" id="rt1">v1: --</div>
 
   <div class="card">
-    <span class="tag">VIDEO 2 (Sintel)</span>
-    <video id="v2" autoplay muted loop playsinline preload="auto" crossorigin="anonymous">
-      <source src="https://media.w3.org/2010/05/sintel/trailer.mp4" type="video/mp4">
-      <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
-    </video>
+    <span class="tag">CENTER 2 (sintel)</span>
+    <video id="v2" autoplay muted loop playsinline preload="auto" crossorigin="anonymous"
+           src="https://media.w3.org/2010/05/sintel/trailer.mp4"></video>
   </div>
   <div class="rt" id="rt2">v2: --</div>
 
   <div class="pad">▲ 위로 스크롤 ▲</div>
 </div>
 
+<!-- 오른쪽 하단 고정 미니 플레이어 (Spotify 미니처럼 스크롤 무관하게 고정) -->
+<div id="mini">
+  <span class="tag">MINI (flower) · fixed</span>
+  <video id="v3" autoplay muted loop playsinline preload="auto" crossorigin="anonymous"
+         src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
+</div>
+<div id="miniRt">v3: --</div>
+
 <script>
-// 자동재생 보장(muted 라 정책상 허용) + 재생 확인용 currentTime 표시.
-// currentTime 이 흐르면 디코딩 재생 중, 화면 갱신 여부는 눈/녹화로 확인.
 function hook(id, rtId) {
   var v = document.getElementById(id), rt = document.getElementById(rtId);
-  var p = v.play(); if (p && p.catch) p.catch(function(){ /* 재시도는 사용자 탭 */ });
+  var p = v.play(); if (p && p.catch) p.catch(function(){});
   setInterval(function(){
+    var r = v.getBoundingClientRect();
     rt.textContent = id + ': t=' + v.currentTime.toFixed(2) +
-      '  ' + (v.paused ? '[PAUSED]' : '[playing]') +
-      '  rs=' + v.readyState + '  ' + v.videoWidth + 'x' + v.videoHeight;
+      ' ' + (v.paused ? '[PAUSED]' : '[play]') +
+      ' rs=' + v.readyState + ' @' + Math.round(r.x) + ',' + Math.round(r.y);
   }, 500);
 }
 hook('v1', 'rt1');
 hook('v2', 'rt2');
+hook('v3', 'miniRt');
 </script>
 </body>
 </html>
