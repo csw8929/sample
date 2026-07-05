@@ -42,17 +42,45 @@
 
   <div class="card">
     <span class="tag">CENTER 1 (bunny)</span>
-    <video id="v1" autoplay muted loop playsinline preload="auto" crossorigin="anonymous"
+    <video id="v1" autoplay muted loop playsinline preload="auto"
            src="https://media.w3.org/2010/05/bunny/trailer.mp4"></video>
   </div>
   <div class="rt" id="rt1">v1: --</div>
 
   <div class="card">
     <span class="tag">CENTER 2 (sintel)</span>
-    <video id="v2" autoplay muted loop playsinline preload="auto" crossorigin="anonymous"
+    <video id="v2" autoplay muted loop playsinline preload="auto"
            src="https://media.w3.org/2010/05/sintel/trailer.mp4"></video>
   </div>
   <div class="rt" id="rt2">v2: --</div>
+
+  <div class="card">
+    <span class="tag">CENTER 3 (bunny)</span>
+    <video id="v4" autoplay muted loop playsinline preload="auto"
+           src="https://media.w3.org/2010/05/bunny/trailer.mp4"></video>
+  </div>
+  <div class="rt" id="rt4">v4: --</div>
+
+  <div class="card">
+    <span class="tag">CENTER 4 (sintel)</span>
+    <video id="v5" autoplay muted loop playsinline preload="auto"
+           src="https://media.w3.org/2010/05/sintel/trailer.mp4"></video>
+  </div>
+  <div class="rt" id="rt5">v5: --</div>
+
+  <div class="card">
+    <span class="tag">CENTER 5 (bunny)</span>
+    <video id="v6" autoplay muted loop playsinline preload="auto"
+           src="https://media.w3.org/2010/05/bunny/trailer.mp4"></video>
+  </div>
+  <div class="rt" id="rt6">v6: --</div>
+
+  <div class="card">
+    <span class="tag">CENTER 6 (sintel)</span>
+    <video id="v7" autoplay muted loop playsinline preload="auto"
+           src="https://media.w3.org/2010/05/sintel/trailer.mp4"></video>
+  </div>
+  <div class="rt" id="rt7">v7: --</div>
 
   <div class="pad">▲ 위로 스크롤 ▲</div>
 </div>
@@ -60,7 +88,7 @@
 <!-- 오른쪽 하단 고정 미니 플레이어 (Spotify 미니처럼 스크롤 무관하게 고정) -->
 <div id="mini">
   <span class="tag">MINI (flower) · fixed</span>
-  <video id="v3" autoplay muted loop playsinline preload="auto" crossorigin="anonymous"
+  <video id="v3" autoplay muted loop playsinline preload="auto"
          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
 </div>
 <div id="miniRt">v3: --</div>
@@ -79,6 +107,10 @@ function hook(id, rtId) {
 hook('v1', 'rt1');
 hook('v2', 'rt2');
 hook('v3', 'miniRt');
+hook('v4', 'rt4');
+hook('v5', 'rt5');
+hook('v6', 'rt6');
+hook('v7', 'rt7');
 </script>
 </body>
 </html>
