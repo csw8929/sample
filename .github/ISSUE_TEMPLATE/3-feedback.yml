@@ -1,0 +1,19 @@
+name: "💬 feedback"
+description: 아이디어에 대한 소감과 코멘트를 남깁니다
+title: "[feedback] "
+labels: ["feedback"]
+body:
+  - type: input
+    id: idea
+    attributes:
+      label: 아이디어 번호
+      placeholder: "#001"
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: 소감 / 코멘트
+      description: 「이거랑 저거 합치면?」 같은 한 줄이 가장 값진 입력입니다
+    validations:
+      required: true

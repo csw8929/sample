@@ -1,0 +1,19 @@
+name: "❓ 상세 질문"
+description: 아이디어에 대해 더 알고 싶은 것을 묻습니다
+title: "[질문] "
+labels: ["질문"]
+body:
+  - type: input
+    id: idea
+    attributes:
+      label: 아이디어 번호
+      placeholder: "#001"
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: 질문
+      description: 다음 날 아침 이 이슈에 답글로 답하고, 아이디어 문서에도 Q&A로 붙입니다
+    validations:
+      required: true

@@ -1,0 +1,27 @@
+name: "⭐ 평가"
+description: 아이디어 하나를 평가합니다
+title: "[평가] "
+labels: ["평가"]
+body:
+  - type: input
+    id: idea
+    attributes:
+      label: 아이디어 번호
+      description: 예) #001
+      placeholder: "#001"
+    validations:
+      required: true
+  - type: dropdown
+    id: rating
+    attributes:
+      label: 평가
+      options:
+        - "👍 좋다 — 더 파 보자"
+        - "🤔 애매 — 생각해 보자"
+        - "👎 아니다 — 접자"
+    validations:
+      required: true
+  - type: input
+    id: oneline
+    attributes:
+      label: 한 줄 이유 (선택)
