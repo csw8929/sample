@@ -117,12 +117,14 @@ def render_flow(spec):
             for node in (source, target):
                 if node not in nodes:
                     nodes.append(node)
+        out_label = {source: label for source, _, _, label in edges}
         x, boxes = left, {}
         for node in nodes:
             width = text_width(node)
             boxes[node] = (x, width)
-            x += width + gap
-        max_x = max(max_x, x - gap)
+            label_room = text_width(out_label.get(node, "")) * 0.85 - width / 2
+            x += width + max(gap, label_room)
+        max_x = max(max_x, max(bx + bw for bx, bw in boxes.values()))
         tone = "bad" if group == "원래" else "good"
         rows_svg.append(f'<text class="f-group {tone}" x="0" y="{y + 26}">{html.escape(group)}</text>')
         for node, (bx, width) in boxes.items():
