@@ -1,0 +1,55 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>사업 아이디어</title>
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#1d1d1f;--sub:#5f6368;--line:#e3e3e0;--accent:#2563eb;
+--high:#15803d;--mid:#ca8a04;--midlow:#ea580c;--low:#dc2626;--good:#16a34a;--bad:#dc2626;--chip:#eef2ff}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#111214;--card:#1b1c1f;--ink:#ececec;
+--sub:#a0a4ab;--line:#2c2e33;--accent:#7aa2ff;--chip:#1f2638}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font:16px/1.65 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif}
+main{max-width:920px;margin:0 auto;padding:24px 16px 64px}
+a{color:var(--accent)}h1{font-size:1.5rem;margin:.2em 0}.sub{color:var(--sub)}
+.idea,.summary{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;margin:18px 0}
+.idea header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.idea h2{font-size:1.18rem;margin:0;flex:1 1 260px}.num{color:var(--sub);font-weight:600}
+.grade{font-size:.85rem;font-weight:700;color:#fff;border-radius:999px;padding:2px 10px}
+.g-high{background:var(--high)}.g-mid{background:var(--mid)}.g-midlow{background:var(--midlow)}.g-low{background:var(--low)}
+.tag{font-size:.75rem;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--sub)}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:none;color:var(--sub);font:inherit;font-size:.93rem;padding:6px 10px;cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.panel{display:none;padding-top:6px}.panel.on{display:block}
+.panel ul{padding-left:1.2em}.panel li{margin:.3em 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.act{text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:7px 12px;background:var(--chip);color:var(--ink);font-size:.93rem}
+.act:hover{border-color:var(--accent)}
+.reactions{margin-top:12px;border-top:1px dashed var(--line);padding-top:6px}
+.reactions h4{margin:.3em 0;font-size:.95rem;color:var(--sub)}.reactions .live{padding-left:1.1em;margin:0}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.flow{margin:6px 0}.flow svg{max-width:100%;height:auto}
+.flow figcaption{font-size:.85rem;color:var(--sub)}
+.f-box{fill:var(--card);stroke-width:1.6}.f-box.good{stroke:var(--good)}.f-box.bad{stroke:var(--bad)}
+.f-node{fill:var(--ink);font-size:14px}.f-label{fill:var(--sub);font-size:12.5px}
+.f-group{font-size:14px;font-weight:700}.f-group.good{fill:var(--good)}.f-group.bad{fill:var(--bad)}
+.f-arrow{stroke:var(--good);stroke-width:2}.f-arrow.blocked{stroke:var(--bad);stroke-dasharray:5 4}
+.f-head{fill:var(--good)}.f-head.bad{fill:var(--bad)}.f-x{fill:var(--bad);font-size:16px;font-weight:700}
+code{background:var(--chip);border-radius:4px;padding:0 4px}
+</style></head><body><main><h1>사업 아이디어 — 하루 5개</h1><p class="sub">2026-10-02 ~ 10-08 일주일 시범 · 10-09 에 함께 돌아본다. 아이디어마다 ⭐ 평가 · ❓ 상세 질문 · 💬 feedback 을 누르면 양식이 열리고, Claude 가 감지해 반응한다. 💡 쉽게 설명과 🖼 돈의 흐름은 탭에서 본다.</p><section class="summary"><h3><a href="20261002.html">2026-10-02 (금) — 렌즈: 확장 「지금 이렇게 하는데, 이렇게 넓히면 훨씬 낫다」</a></h3><ul><li><a href="20261002.html#i001">#001 실손24 연계 브릿지 — 의원·약국용</a> <span class="grade g-low">하</span></li><li><a href="20261002.html#i002">#002 무인점포 절도 사후 처리 자동화</a> <span class="grade g-low">하</span></li><li><a href="20261002.html#i003">#003 반려동물 진료기록 지갑 + 펫보험 한 번에 청구</a> <span class="grade g-midlow">중하</span></li><li><a href="20261002.html#i004">#004 한 번만 알림 — 사망 후 계약 일괄 정리</a> <span class="grade g-midlow">하~중</span></li><li><a href="20261002.html#i005">#005 멀리 있는 빈집 집사</a> <span class="grade g-midlow">중하</span></li></ul></section></main><script>
+document.querySelectorAll('.idea').forEach(card=>{
+  card.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{
+    card.querySelectorAll('.tab,.panel').forEach(el=>el.classList.remove('on'));
+    tab.classList.add('on');document.getElementById(tab.dataset.panel).classList.add('on');
+  }));
+});
+fetch('https://api.github.com/repos/csw8929/sample/issues?state=all&per_page=100').then(r=>r.ok?r.json():[]).then(issues=>{
+  document.querySelectorAll('.reactions').forEach(box=>{
+    const tag=box.dataset.idea;
+    const mine=issues.filter(i=>(i.title+' '+(i.body||'')).includes(tag));
+    const ul=box.querySelector('.live');
+    mine.forEach(i=>{const li=document.createElement('li');const a=document.createElement('a');
+      a.href=i.html_url;a.target='_blank';a.textContent=i.title+(i.comments?` (답글 ${i.comments})`:'');
+      li.appendChild(a);ul.appendChild(li);});
+  });
+}).catch(()=>{});
+</script></body></html>
