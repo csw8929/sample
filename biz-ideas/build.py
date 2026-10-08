@@ -161,7 +161,7 @@ def menu_buttons(number, name):
 
 
 def parse_idea(section):
-    head = re.search(r"^## #(\d{3}) (.+)$", section, flags=re.M)
+    head = re.search(r"^## #([A-Z]?\d{3}) (.+)$", section, flags=re.M)
     number, name = head.group(1), head.group(2).strip()
     by_codex = "(Codex)" in name
     clean_name = re.sub(r"\s*\*\(Codex\)\*", "", name)
@@ -291,7 +291,7 @@ def build_day(path):
     sections = re.split(r"\n---\n", text)
     head = re.sub(r"^# .+$", "", sections[0], flags=re.M)
     head = re.sub(r"^\[← 목록\].*$", "", head, flags=re.M)
-    ideas = [parse_idea(s) for s in sections[1:] if re.search(r"^## #\d{3} ", s, flags=re.M)]
+    ideas = [parse_idea(s) for s in sections[1:] if re.search(r"^## #[A-Z]?\d{3} ", s, flags=re.M)]
     body = f"<h1>{inline(title)}</h1>"
     body += f'<section class="summary">{render_blocks(head)}</section>'
     body += "".join(render_idea(idea) for idea in ideas)
@@ -300,21 +300,29 @@ def build_day(path):
     return title, os.path.basename(out), ideas
 
 
-def main():
-    days = sorted(glob.glob(os.path.join(HERE, "20[0-9][0-9][01][0-9][0-3][0-9].md")), reverse=True)
+def day_rows(paths):
     rows = []
-    for path in days:
+    for path in paths:
         title, href, ideas = build_day(path)
         rows.append(f'<section class="summary"><h3><a href="{href}">{inline(title)}</a></h3><ul>' + "".join(
             f'<li><a href="{href}#i{i["number"]}">#{i["number"]} {html.escape(i["name"])}</a> '
             f'<span class="grade {GRADE_CLASS.get(i["grade"], "g-mid")}">{html.escape(i["grade"])}</span></li>'
             for i in ideas) + "</ul></section>")
-    intro = ("<h1>사업 아이디어 — 하루 5개</h1>"
-             '<p class="sub">2026-10-02 ~ 10-08 일주일 시범 · 10-09 에 함께 돌아본다. '
-             "아이디어마다 ⭐ 평가 · ❓ 상세 질문 · 💬 feedback 을 누르면 양식이 열리고, Claude 가 감지해 반응한다. "
-             "💡 쉽게 설명과 🖼 돈의 흐름은 탭에서 본다.</p>")
-    open(os.path.join(HERE, "index.html"), "w", encoding="utf-8").write(page("사업 아이디어", intro + "".join(rows), back=False))
-    print("built", len(days), "days")
+    return rows
+
+
+def main():
+    days = sorted(glob.glob(os.path.join(HERE, "20[0-9][0-9][01][0-9][0-3][0-9].md")), reverse=True)
+    kids = sorted(glob.glob(os.path.join(HERE, "kids-20[0-9][0-9][01][0-9][0-3][0-9]*.md")), reverse=True)
+    intro = ("<h1>사업 아이디어</h1>"
+             '<p class="sub">아이디어마다 ⭐ 평가 · ❓ 상세 질문 · 💬 feedback 을 누르면 양식이 열리고, Claude 가 감지해 반응한다. '
+             "💡 쉽게 설명과 🖼 돈의 흐름은 탭에서 본다. 등급은 순위가 아니다 — «가장 싸게 확인할 질문»이 진짜 판정이다.</p>")
+    body = intro
+    if kids:
+        body += "<h2>🧒 미취학 아동 트랙 (K 번호)</h2>" + "".join(day_rows(kids))
+    body += "<h2>일반 배치</h2>" + "".join(day_rows(days))
+    open(os.path.join(HERE, "index.html"), "w", encoding="utf-8").write(page("사업 아이디어", body, back=False))
+    print("built", len(days), "days,", len(kids), "kids")
 
 
 if __name__ == "__main__":
