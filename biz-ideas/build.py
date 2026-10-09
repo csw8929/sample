@@ -312,7 +312,7 @@ def day_rows(paths):
 
 
 def main():
-    days = sorted(glob.glob(os.path.join(HERE, "20[0-9][0-9][01][0-9][0-3][0-9].md")), reverse=True)
+    days = sorted(glob.glob(os.path.join(HERE, "20[0-9][0-9][01][0-9][0-3][0-9]*.md")), reverse=True)
     kids = sorted(glob.glob(os.path.join(HERE, "kids-20[0-9][0-9][01][0-9][0-3][0-9]*.md")), reverse=True)
     intro = ("<h1>사업 아이디어</h1>"
              '<p class="sub">아이디어마다 ⭐ 평가 · ❓ 상세 질문 · 💬 feedback 을 누르면 양식이 열리고, Claude 가 감지해 반응한다. '
